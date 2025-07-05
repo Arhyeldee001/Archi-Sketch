@@ -1,0 +1,471 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+
+#app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: black;
+  overflow: hidden;
+}
+
+#camera {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+#overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  max-width: 80%;
+  max-height: 80%;
+  opacity: 0.5;
+  z-index: 2;
+  touch-action: none;
+  pointer-events: auto;
+  display: none;
+}
+
+#controls {
+  position: fixed;
+  bottom: 20px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+#top-controls {
+  pointer-events: auto;
+  background: transparent;
+}
+
+#upload {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: white;
+  font-size: 14px;
+}
+
+/* File Upload Button Styles */
+.file-upload-label {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  padding: 8px 16px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Add this to your .file-upload-label styles */
+.file-upload-label::before {
+  content: "🖼️"; /* Image emoji */
+  margin-right: 8px;
+  /* OR using Font Awesome:
+  content: "\f03e";
+  font-family: "Font Awesome"; */
+}
+
+.file-upload-label:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.upload-text {
+  pointer-events: none; /* Makes the text non-interactive */
+}
+
+#upload {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.sliders-container {
+  display: flex;
+  gap: 20px;
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 10px 20px;
+  border-radius: 20px;
+  align-items: center;
+}
+
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.slider-label {
+  color: white;
+  font-size: 12px;
+  text-align: center;
+  padding-top: 2px;
+}
+
+#opacity, #zoom {
+  width: 120px;
+  background: transparent;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  outline: none;
+  margin: 0;
+}
+
+#opacity::-webkit-slider-thumb, 
+#zoom::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  margin-top: -6px;
+}
+
+#opacity::-moz-range-thumb, 
+#zoom::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  border: none;
+}
+
+#opacity::-webkit-slider-runnable-track, 
+#zoom::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+#nav-toggle {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 50px;
+  background: white;
+  border: none;
+  border-radius: 0 5px 5px 0;
+  z-index: 4;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: left 0.3s ease;
+}
+
+#nav-menu {
+  position: fixed;
+  left: -150px;
+  top: 0;
+  width: 150px;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 3;
+  transition: left 0.3s ease;
+  padding: 20px 10px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#nav-menu.open {
+  left: 0;
+}
+
+#nav-toggle i {
+  font-size: 16px;
+  transition: transform 0.3s ease;
+}
+
+/* Change this to move with the menu */
+#nav-toggle.open {
+  left: 150px;
+}
+
+/* Keep the icon rotation */
+#nav-toggle.open i {
+  transform: rotate(180deg);
+}
+
+#reset-btn {
+  background: rgba(255, 255, 255, 0.897);
+  border: 1px solid rgb(161, 161, 161);
+  color: rgb(0, 0, 0);
+  padding: 5px;
+  border-radius: 4px;
+  margin-top: 20px;
+  cursor: pointer;
+}
+
+#reset-all-btn {
+  background: rgba(255, 9, 9, 0.2);
+  border: 1px solid white;
+  color: white;
+  padding: 5px;
+  border-radius: 4px;
+  margin-top: 20px;
+  cursor: pointer;
+}
+
+#image-thumbnails {
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 15px;
+  max-height: calc(100vh - 150px);
+  overflow-y: auto;
+  align-items: center; /* Center thumbnails horizontally */
+  width: 100%; /* Take full width of nav */
+  scrollbar-width: thin; /* For Firefox */
+  scrollbar-color: rgba(255,255,255,0.3) transparent; /* For Firefox */
+}
+
+.thumbnail {
+  width: 75px;
+  height:75px;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin: 0 auto; /* Additional centering */
+}
+
+.thumbnail:hover {
+  border-color: white;
+  transform: scale(1.05);
+}
+
+.thumbnail.active {
+  border-color: #4CAF50;
+}
+
+#add-image-btn {
+  background: rgba(255,255,255,0.1);
+  border: 1px dashed rgba(255,255,255,0.5);
+  color: white;
+  width: 75px;
+  height: 75px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-bottom: 15px;
+  margin: 0 auto 15px; /* Center horizontally with bottom margin */
+}
+
+#add-image-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+
+/* For WebKit browsers (Chrome, Safari, Edge) */
+#image-thumbnails::-webkit-scrollbar {
+  width: 4px; /* Makes scrollbar very slim */
+}
+
+#image-thumbnails::-webkit-scrollbar-track {
+  background: transparent; /* Transparent track */
+  margin: 5px 0; /* Adds some space at top/bottom */
+}
+
+#image-thumbnails::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.3); /* Light gray thumb */
+  border-radius: 2px; /* Rounded corners */
+  transition: background 0.3s ease; /* Smooth hover effect */
+}
+
+#image-thumbnails::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.5); /* Brighter when hovered */
+}
+
+/* Optional: Hide scrollbar when not scrolling */
+#image-thumbnails {
+  scrollbar-width: none; /* Firefox */
+}
+#image-thumbnails::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+#image-thumbnails:hover::-webkit-scrollbar {
+  display: initial; /* Show on hover */
+}
+
+/* Right Navigation */
+#right-nav-toggle {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 50px;
+  background: white;
+  border: none;
+  border-radius: 5px 0 0 5px;
+  z-index: 4;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: right 0.3s ease;
+}
+
+#right-nav-menu {
+  position: fixed;
+  right: -150px;
+  top: 0;
+  width: 150px;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 3;
+  transition: right 0.3s ease;
+  padding: 20px 10px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  justify-content: center; /* This centers vertically */
+
+}
+
+#right-nav-menu.open {
+  right: 0;
+}
+
+#right-nav-toggle.open {
+  right: 150px;
+}
+
+#right-nav-toggle i {
+  font-size: 16px;
+}
+/* Grid overlay */
+.grid-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1000;
+  display: none;
+  background-image: 
+    linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px);
+  background-size: 25% 25%; /* Default 4x4 grid */
+}
+
+/* Grid controls */
+.grid-controls {
+  position: relative;
+  display: inline-block;
+}
+
+.grid-options {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.9);
+  padding: 10px;
+  border-radius: 5px;
+  z-index: 1100;
+  min-width: 80px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+.grid-options.show {
+  display: block;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.grid-options button {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  margin: 4px 0;
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: white;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 14px;
+  text-align: center;
+  transition: background 0.2s;
+}
+
+.grid-options button:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+
+/* Flashlight Overlay (for iOS) */
+#flash-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: white;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+#toggle-flashlight-btn.active {
+  background-color: #ffeb3b;
+  color: #000;
+  box-shadow: 0 0 15px #ffeb3b;
+}
+
+#toggle-flashlight-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
