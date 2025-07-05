@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login / Register</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+            width: 100%;
+            max-width: 400px;
+            color: #fff;
+            position: relative;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        form {
+            display: none;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        form.active {
+            display: flex;
+        }
+
+        input {
+            padding: 0.75rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        button {
+            padding: 0.75rem;
+            background: #fff;
+            color: #764ba2;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s ease;
+        }
+
+        button:hover {
+            background: #f0f0f0;
+        }
+
+        .switch {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .switch a {
+            color: #fff;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        #message {
+            margin-top: 1rem;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 id="formTitle">Login</h2>
+
+        <!-- Login Form -->
+        <form id="loginForm" class="active">
+            <input type="email" id="loginEmail" placeholder="Email" required />
+            <input type="password" id="loginPassword" placeholder="Password" required />
+            <button type="submit">Login</button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="registerForm">
+            <input type="text" id="regFullname" placeholder="Full Name" required />
+            <input type="text" id="regPhone" placeholder="Phone" required />
+            <input type="email" id="regEmail" placeholder="Email" required />
+            <input type="password" id="regPassword" placeholder="Password" required />
+            <button type="submit">Register</button>
+        </form>
+
+        <div class="switch">
+            <span id="switchText">Don't have an account? <a onclick="toggleForm()">Register here</a></span>
+        </div>
+
+        <p id="message"></p>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById("loginForm");
+        const registerForm = document.getElementById("registerForm");
+        const formTitle = document.getElementById("formTitle");
+        const switchText = document.getElementById("switchText");
+        const message = document.getElementById("message");
+
+        function toggleForm() {
+            const isLoginActive = loginForm.classList.contains("active");
+            loginForm.classList.toggle("active");
+            registerForm.classList.toggle("active");
+            formTitle.textContent = isLoginActive ? "Register" : "Login";
+            switchText.innerHTML = isLoginActive
+                ? 'Already have an account? <a onclick="toggleForm()">Login here</a>'
+                : 'Don\'t have an account? <a onclick="toggleForm()">Register here</a>';
+            message.textContent = "";
+        }
+
+        loginForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const data = {
+                email: document.getElementById("loginEmail").value,
+                password: document.getElementById("loginPassword").value
+            };
+            
+            try {
+                const res = await fetch("/api/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await res.json();
+                message.textContent = res.ok
+                    ? "✅ " + result.message
+                    : "❌ " + (result.detail || "Login failed");
+
+                if (res.ok) {
+                    console.log("Login response:", result);  // Debug log
+                    // Use the backend's redirect_to instead of hardcoding /ar
+                    window.location.href = result.redirect_to || "/ar";
+                }
+            } catch (error) {
+                console.error("Login error:", error);
+                message.textContent = "❌ Network error";
+            }
+        });
+
+        registerForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const user = {
+                fullname: document.getElementById("regFullname").value,
+                phone: document.getElementById("regPhone").value,
+                email: document.getElementById("regEmail").value,
+                password: document.getElementById("regPassword").value
+            };
+            
+            try {
+                const res = await fetch("/api/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(user)
+                });
+                
+                const result = await res.json();
+                message.textContent = res.ok
+                    ? "✅ " + result.message
+                    : "❌ " + (result.detail || "Registration failed");
+
+                if (res.ok) {
+                    console.log("Registration response:", result);  // Debug log
+                    // Redirect to onboarding for new users
+                    window.location.href = result.redirect_to || "/login";
+                }
+            } catch (error) {
+                console.error("Registration error:", error);
+                message.textContent = "❌ Network error";
+            }
+        });
+    </script>
+</body>
+</html>

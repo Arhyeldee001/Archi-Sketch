@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AR Tracer - Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .welcome {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+            width: 90%;
+            max-width: 1000px;
+        }
+        
+        .welcome h1 {
+            font-size: 5rem; /* Much larger heading */
+            margin: 0 0 15px 0;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        
+        .welcome p {
+            font-size: 2.5rem;
+            opacity: 0.9;
+            margin: 0;
+            color: rgb(184, 185, 185);
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            width: 90%;
+            max-width: 1000px;
+            margin-bottom: 40px; /* Balance space at bottom */
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 35px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+        
+        .card-wide {
+            grid-column: span 2;
+        }
+        
+        h2 {
+            color: #2d3748;
+            margin: 0 0 15px 0;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        
+        p {
+            color: #4a5568;
+            margin: 0 0 25px 0;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+        
+        button {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            margin-top: auto; /* Pushes button to bottom */
+            width: fit-content;
+        }
+        
+        button:hover {
+            background: #4338ca;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="welcome">
+        <h1>Welcome to <br> Archi Sketch</h1>
+        <p>Transform your architectural visions into augmented reality</p>
+    </div>
+    
+    <div class="dashboard">
+        <!-- Card 1 - Direct to AR -->
+        <div class="card" onclick="window.location.href='/ar'">
+            <h2>📤 Upload Image & Draw</h2>
+            <p>Upload your own architecture plans to trace and annotate in augmented reality</p>
+            <button>Start Tracing</button>
+        </div>
+
+        <!-- Card 2 - Template Gallery -->
+        <div class="card" onclick="window.location.href='/templates'">
+            <h2>🏛️ Architecture Templates</h2>
+            <p>Browse our collection of professional templates to practice your skills</p>
+            <button>Choose Template</button>
+        </div>
+
+        <!-- Card 3 - Text to AR (Full width) -->
+        <div class="card card-wide" onclick="window.location.href='/text-art'">
+            <h2>✍️ Text to AR Design</h2>
+            <p>Generate custom traceable designs instantly using AI-powered text prompts</p>
+            <button>Generate Design</button>
+        </div>
+    </div>
+</body>
+</html>

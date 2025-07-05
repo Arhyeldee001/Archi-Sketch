@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin - User List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+            background: #f0f2f5;
+        }
+        h1 {
+            text-align: center;
+        }
+        .auth-box {
+            max-width: 400px;
+            margin: auto;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+        input, button {
+            padding: 0.5rem;
+            font-size: 1rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 0.75rem;
+            text-align: left;
+        }
+        th {
+            background-color: #f7f7f7;
+        }
+        #message {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #d9534f;
+        }
+    </style>
+</head>
+<body>
+    <h1>Admin - Registered Users</h1>
+
+    <div class="auth-box">
+        <input type="password" id="adminPassword" placeholder="Admin Password (try 'secret123')" />
+        <button onclick="loadUsers()">Load Users</button>
+    </div>
+
+    <p id="message"></p>
+
+    <table id="userTable" style="display:none;">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Full Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Hashed Password</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        async function loadUsers() {
+            const password = document.getElementById("adminPassword").value;
+            const res = await fetch(`/admin/users?admin_password=${encodeURIComponent(password)}`);
+            const messageBox = document.getElementById("message");
+
+            if (res.ok) {
+                const users = await res.json();
+                const tbody = document.querySelector("#userTable tbody");
+                tbody.innerHTML = "";
+
+                users.forEach(user => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${user.id}</td>
+                        <td>${user.fullname || ''}</td>
+                        <td>${user.phone || ''}</td>
+                        <td>${user.email}</td>
+                        <td>${user.hashed_password}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                document.getElementById("userTable").style.display = "table";
+                messageBox.textContent = "";
+            } else {
+                messageBox.textContent = "❌ Wrong password or failed to load users.";
+                document.getElementById("userTable").style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>

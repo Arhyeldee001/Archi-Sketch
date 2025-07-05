@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Template Gallery</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .template {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .template:hover {
+            transform: translateY(-5px);
+        }
+        .template-img {
+            width: 100%;
+            height: 200px;
+            object-fit: contain;
+            background: #f8fafc;
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .template-info {
+            padding: 20px;
+            text-align: center;
+        }
+        .template h3 {
+            margin: 0 0 10px;
+            color: #2d3748;
+        }
+        .select-btn {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center; margin: 30px 0;">🏛️ Architecture Templates</h1>
+    
+    <div class="gallery">
+        <div class="template">
+            <img src="/static/templates/floorplan1.jpeg" class="template-img" alt="Modern Floorplan">
+            <div class="template-info">
+                <h3>Modern Floorplan</h3>
+                <button class="select-btn" onclick="selectTemplate('floorplan1')">Select</button>
+            </div>
+        </div>
+        <div class="template">
+            <img src="/static/templates/elevation1.jpeg" class="template-img" alt="Building Elevation">
+            <div class="template-info">
+                <h3>Building Elevation</h3>
+                <button class="select-btn" onclick="selectTemplate('elevation1')">Select</button>
+            </div>
+        </div>
+        <!-- Add more templates as needed -->
+    </div>
+
+    <script>
+        // In your templates.html
+        function selectTemplate(filename) {
+            // Store the COMPLETE image path WITH EXTENSION
+            const imagePath = `/static/templates/${filename}.jpeg`;  // Note the .jpeg
+            localStorage.setItem('selectedTemplatePath', imagePath);
+            window.location.href = '/ar';
+        }
+    </script>
+</body>
+</html>

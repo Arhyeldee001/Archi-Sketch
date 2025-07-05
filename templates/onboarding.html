@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome to AR Tracer</title>
+    <style>
+        /* Reset and base styles */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* Fullscreen image container */
+        .onboarding-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Fullscreen image styling */
+        .onboarding-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        /* Active image */
+        .image-active {
+            opacity: 1;
+            z-index: 1;
+        }
+
+        /* Hidden image */
+        .image-hidden {
+            opacity: 0;
+            z-index: 0;
+        }
+
+        /* iOS-style glass button - NOW VISIBLE */
+        .next-button {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            
+            /* Glass effect */
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            
+            /* Button styling */
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 50px;
+            padding: 16px 32px;
+            color: rgb(80, 80, 80);
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            text-decoration: none;
+            box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 100; /* Ensures button stays on top */
+        }
+
+        /* Button hover effect */
+        .next-button:hover {
+            background: rgba(255, 255, 255, 0.35);
+            box-shadow: 0 4px 20px 0 rgba(31, 38, 135, 0.15);
+        }
+
+        /* Button active/press effect */
+        .next-button:active {
+            transform: translateX(-50%) scale(0.98);
+        }
+
+        /* Fallback for browsers without backdrop-filter */
+        @supports not (backdrop-filter: blur(20px)) {
+            .next-button {
+                background: rgba(255, 255, 255, 0.85);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="onboarding-container">
+        <!-- First onboarding image -->
+        <img 
+            src="/static/onboarding/onboarding1.jpg" 
+            class="onboarding-image image-active" 
+            alt="Welcome to AR Tracer"
+            id="image1"
+            onerror="this.onerror=null; this.src='/static/fallback-image.jpg'"
+        >
+        
+        <!-- Second onboarding image -->
+        <img 
+            src="/static/onboarding/onboarding2.jpg" 
+            class="onboarding-image image-hidden" 
+            alt="Next steps"
+            id="image2"
+            onerror="this.onerror=null; this.src='/static/fallback-image.jpg'"
+        >
+        
+        <!-- Third onboarding image -->
+        <img 
+            src="/static/onboarding/onboarding3.jpg" 
+            class="onboarding-image image-hidden" 
+            alt="Final instructions"
+            id="image3"
+            onerror="this.onerror=null; this.src='/static/fallback-image.jpg'"
+        >
+        
+        <!-- Fourth onboarding image (FIXED: changed id to image4) -->
+        <img 
+            src="/static/onboarding/onboarding4.jpg" 
+            class="onboarding-image image-hidden" 
+            alt="Final instructions"
+            id="image4"
+            onerror="this.onerror=null; this.src='/static/fallback-image.jpg'"
+        >
+        
+        <!-- Fifth onboarding image (FIXED: changed id to image5) -->
+        <img 
+            src="/static/onboarding/onboarding5.jpg" 
+            class="onboarding-image image-hidden" 
+            alt="Final instructions"
+            id="image5"
+            onerror="this.onerror=null; this.src='/static/fallback-image.jpg'"
+        >
+
+        <!-- iOS glass button -->
+        <button class="next-button" id="nextButton">
+            Continue
+        </button>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 5;
+        const nextButton = document.getElementById('nextButton');
+        
+        nextButton.addEventListener('click', handleNextClick);
+
+        function handleNextClick() {
+            // Button press feedback
+            nextButton.style.transform = 'translateX(-50%) scale(0.98)';
+            
+            if (currentSlide < totalSlides) {
+                // Hide current image
+                document.getElementById(`image${currentSlide}`).classList.remove('image-active');
+                document.getElementById(`image${currentSlide}`).classList.add('image-hidden');
+                
+                // Show next image
+                currentSlide++;
+                document.getElementById(`image${currentSlide}`).classList.remove('image-hidden');
+                document.getElementById(`image${currentSlide}`).classList.add('image-active');
+                
+                // Reset button state
+                setTimeout(() => {
+                    nextButton.style.transform = 'translateX(-50%)';
+                }, 150);
+            } else {
+                // On last image, complete onboarding
+                completeOnboarding();
+            }
+        }
+
+        async function completeOnboarding() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('user_id');
+        
+        try {
+            console.log('Attempting to complete onboarding for user:', userId);
+            
+            const response = await fetch('/complete-onboarding', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    user_id: userId  // Ensure this matches your backend expectation
+                }),
+                credentials: 'include'  // Required for cookies
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Server error:', errorData);
+                throw new Error(errorData.message || 'Failed to complete onboarding');
+            }
+
+            // Only redirect if response is successful
+            console.log('Onboarding completed successfully, redirecting to login');
+            window.location.href = '/login';
+            
+        } catch (error) {
+            console.error('Error:', error);
+            alert(`Error: ${error.message || 'Please check your connection and try again'}`);
+        } finally {
+            // Reset button state whether successful or not
+            const button = document.querySelector('.next-button');
+            if (button) button.style.transform = 'translateX(-50%)';
+        }
+    }
+    </script>
+</body>
+</html>
