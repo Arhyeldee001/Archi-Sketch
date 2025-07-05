@@ -3,11 +3,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from .models import Base
 
-# 👇 PostgreSQL connection (Railway will provide this URL)
-# Format: postgresql://username:password@host:port/database
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/archisketch")
+# Get Render's PostgreSQL URL from environment variables
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "").replace(
+    "postgres://", "postgresql://"
+)
 
-# 👇 PostgreSQL engine (remove SQLite-specific args)
+if not SQLALCHEMY_DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable not set")
+
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
