@@ -59,7 +59,9 @@ const navToggle = document.getElementById('nav-toggle');
 const navMenu = document.getElementById('nav-menu');
 const resetBtn = document.getElementById('reset-btn');
 const flashlight = new FlashlightController();
-
+// API Configuration (ADD THIS SECTION)
+const API_BASE_URL = "https://archisketch.onrender.com";
+let currentProjectId = null; // To track active project
 // State variables
 let isDragging = false;
 let offsetX = 0;
@@ -173,7 +175,32 @@ function getDistance(touch1, touch2) {
   return Math.hypot(dx, dy);
 }
 
-// ... (keep all existing variable declarations)
+// API Functions (ADD THESE NEW FUNCTIONS)
+async function saveProject(imageData) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image: imageData })
+    });
+    const data = await response.json();
+    currentProjectId = data.id;
+    return data;
+  } catch (error) {
+    console.error("Save error:", error);
+    return null;
+  }
+}
+
+async function loadProjects() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects`);
+    return await response.json();
+  } catch (error) {
+    console.error("Load error:", error);
+    return [];
+  }
+}
 
 // New variables
 const imageThumbnails = document.getElementById('image-thumbnails');
@@ -276,7 +303,7 @@ rightNavToggle.addEventListener('click', () => {
 });
 
 // Wait for DOM to be fully loaded
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
   // Grid variables
   let gridVisible = false;
   let gridSize = 4; // Default size
@@ -286,6 +313,26 @@ document.addEventListener('DOMContentLoaded', function() {
   gridOverlay.className = 'grid-overlay';
   document.body.appendChild(gridOverlay); // Changed from #app to body
   
+    // Load saved projects on startup - NOW IN TRY/CATCH
+  try {
+    const projects = await loadProjects();
+    if (projects.length > 0) {
+      projects.forEach(project => {
+        const thumbnail = document.createElement('img');
+        thumbnail.className = 'thumbnail';
+        thumbnail.src = project.image;
+        thumbnail.addEventListener('click', () => {
+          overlay.src = project.image;
+          overlay.style.display = 'block';
+          currentActiveImage = thumbnail;
+        });
+        imageThumbnails.insertBefore(thumbnail, imageThumbnails.firstChild);
+      });
+    }
+  } catch (error) {
+    console.error("Failed to load projects:", error);
+  }
+
   // Get elements
   const toggleGridBtn = document.getElementById('toggle-grid-btn');
   const gridOptions = document.querySelector('.grid-options');
