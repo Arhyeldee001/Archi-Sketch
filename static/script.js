@@ -1,11 +1,29 @@
-// 1. FIRST - Define the FlashlightController class
 class FlashlightController {
   constructor() {
     this.flashlightOn = false;
+    this.track = null;
+  }
+
+  async init() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+      this.track = stream.getVideoTracks()[0];
+      return true;
+    } catch (err) {
+      console.error("Camera initialization failed:", err);
+      return false;
+    }
   }
 
   async toggle() {
     try {
+      if (!this.track) {
+        const initialized = await this.init();
+        if (!initialized) return false;
+      }
+
       if (this.flashlightOn) {
         await this.turnOff();
       } else {
@@ -13,17 +31,16 @@ class FlashlightController {
       }
       return true;
     } catch (error) {
-      console.error("Flashlight error:", error);
+      console.error("Flashlight toggle error:", error);
       return false;
     }
   }
 
   async turnOn() {
-    if (!video.srcObject) throw new Error('Camera not initialized');
+    if (!this.track) throw new Error('Camera not initialized');
     
-    const videoTrack = video.srcObject.getVideoTracks()[0];
-    if (videoTrack.getCapabilities().torch) {
-      await videoTrack.applyConstraints({
+    if (this.track.getCapabilities().torch) {
+      await this.track.applyConstraints({
         advanced: [{torch: true}]
       });
       this.flashlightOn = true;
@@ -33,19 +50,18 @@ class FlashlightController {
   }
 
   async turnOff() {
-    if (!video.srcObject) return;
+    if (!this.track) return;
     
-    const videoTrack = video.srcObject.getVideoTracks()[0];
-    await videoTrack.applyConstraints({
+    await this.track.applyConstraints({
       advanced: [{torch: false}]
     });
     this.flashlightOn = false;
   }
 
   isSupported() {
-    if (!video.srcObject) return false;
-    const track = video.srcObject.getVideoTracks()[0];
-    return track.getCapabilities().torch;
+    // More reliable support check
+    return 'mediaDevices' in navigator && 
+           'getUserMedia' in navigator.mediaDevices;
   }
 }
 
@@ -390,23 +406,25 @@ document.addEventListener('DOMContentLoaded', async function() {
   updateGrid();
 });
 
-// Flashlight toggle
-toggleFlashlightBtn.addEventListener('click', async () => {
-  // Check support first
-  if (!flashlight.isSupported()) {
-    toggleFlashlightBtn.innerHTML = '<i class="fas fa-ban"></i> Not Supported';
-    toggleFlashlightBtn.disabled = true;
-    return;
-  }
 
-  const success = await flashlight.toggle();
-  if (success) {
-    toggleFlashlightBtn.classList.toggle('active', flashlight.flashlightOn);
-    toggleFlashlightBtn.innerHTML = flashlight.flashlightOn 
-      ? '<i class="fas fa-lightbulb"></i> FLASH ON'
+// Button Handler
+document.getElementById('toggle-flashlight-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('toggle-flashlight-btn');
+  
+  try {
+    const success = await flashlight.toggle();
+    btn.innerHTML = flashlight.flashlightOn 
+      ? '<i class="fas fa-lightbulb"></i> FLASH ON' 
       : '<i class="fas fa-lightbulb"></i> FLASH OFF';
-  } else {
-    toggleFlashlightBtn.innerHTML = '<i class="fas fa-ban"></i> Error';
+    btn.classList.toggle('active', flashlight.flashlightOn);
+    
+    if (!success && flashlight.flashlightOn) {
+      btn.innerHTML = '<i class="fas fa-lightbulb"></i> NO FLASH';
+    }
+  } catch (err) {
+    console.error("Flashlight error:", err);
+    btn.innerHTML = '<i class="fas fa-ban"></i> NOT SUPPORTED';
+    btn.disabled = true;
   }
 });
 
