@@ -7,11 +7,25 @@ class FlashlightController {
   }
 
   async init() {
+    if (this.isIOS) return false;
+    
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
+        video: {
+          facingMode: { exact: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
       });
+      
       this.track = stream.getVideoTracks()[0];
+      
+      // Wait for video to be ready (important for some Android devices)
+      await new Promise(resolve => {
+        if (video.readyState >= 2) resolve();
+        else video.onloadeddata = resolve;
+      });
+      
       return true;
     } catch (err) {
       console.error("Camera initialization failed:", err);
@@ -77,7 +91,7 @@ const navToggle = document.getElementById('nav-toggle');
 const navMenu = document.getElementById('nav-menu');
 const resetBtn = document.getElementById('reset-btn');
 const flashlight = new FlashlightController();
-// API Configuration (ADD THIS SECTION)
+// API Configuration
 const API_BASE_URL = "https://archisketch.onrender.com";
 let currentProjectId = null; // To track active project
 // State variables
@@ -87,7 +101,6 @@ let offsetY = 0;
 let currentScale = 1;
 let initialDistance = null;
 let initialScale = 1;
-
 
 // Initialize camera
 navigator.mediaDevices.getUserMedia({
@@ -101,11 +114,9 @@ navigator.mediaDevices.getUserMedia({
 });
 
 // Navigation toggle
-// Update your existing navigation toggle code to:
 navToggle.addEventListener('click', () => {
   navMenu.classList.toggle('open');
   navToggle.classList.toggle('open');
-  // No need to manually change icons - CSS handles it
 });
 
 // Reset button functionality
@@ -193,7 +204,7 @@ function getDistance(touch1, touch2) {
   return Math.hypot(dx, dy);
 }
 
-// API Functions (ADD THESE NEW FUNCTIONS)
+// API Functions
 async function saveProject(imageData) {
   try {
     const response = await fetch(`${API_BASE_URL}/projects`, {
@@ -236,11 +247,9 @@ function handleImageUpload(file) {
     
     // Add click handler for thumbnail
     thumbnail.addEventListener('click', () => {
-      // Set this image as active in AR view
       overlay.src = reader.result;
       overlay.style.display = 'block';
       
-      // Update active state
       if (currentActiveImage) {
         currentActiveImage.classList.remove('active');
       }
@@ -248,10 +257,8 @@ function handleImageUpload(file) {
       currentActiveImage = thumbnail;
     });
     
-    // Add to thumbnails container (at the top)
     imageThumbnails.insertBefore(thumbnail, imageThumbnails.firstChild);
     
-    // If first image, activate it automatically
     if (!currentActiveImage) {
       thumbnail.click();
     }
@@ -261,7 +268,7 @@ function handleImageUpload(file) {
 
 // New image upload button
 addImageBtn.addEventListener('click', () => {
-  upload.click(); // Trigger hidden file input
+  upload.click();
 });
 
 // Modified upload event listener
@@ -273,7 +280,6 @@ upload.addEventListener('change', e => {
     handleImageUpload(files[i]);
   }
   
-  // Reset input to allow same file to be uploaded again
   upload.value = '';
 });
 
@@ -286,25 +292,14 @@ resetBtn.addEventListener('click', () => {
   }
 });
 
-// Get the Reset All button (add this with your other element declarations at the top)
+// Reset All button
 const resetAllBtn = document.getElementById('reset-all-btn');
-
-// Reset All button functionality (add this near your other event listeners)
 resetAllBtn.addEventListener('click', () => {
-  // Clear all thumbnails
   imageThumbnails.innerHTML = '';
-  
-  // Re-add the add-image button (since we cleared everything)
   imageThumbnails.appendChild(addImageBtn);
-  
-  // Clear the current active image reference
   currentActiveImage = null;
-  
-  // Optional: Also reset the AR view if you want
   overlay.style.display = 'none';
   overlay.src = '';
-  
-  // Optional: Reset file input
   upload.value = '';
 });
 
@@ -329,9 +324,8 @@ document.addEventListener('DOMContentLoaded', async function() {
   // Create grid overlay
   const gridOverlay = document.createElement('div');
   gridOverlay.className = 'grid-overlay';
-  document.body.appendChild(gridOverlay); // Changed from #app to body
+  document.body.appendChild(gridOverlay);
   
-    // Load saved projects on startup - NOW IN TRY/CATCH
   try {
     const projects = await loadProjects();
     if (projects.length > 0) {
@@ -351,12 +345,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.error("Failed to load projects:", error);
   }
 
-  // Get elements
   const toggleGridBtn = document.getElementById('toggle-grid-btn');
   const gridOptions = document.querySelector('.grid-options');
   const gridControls = document.querySelector('.grid-controls');
   
-  // Function to update grid display
   function updateGrid() {
     if (gridVisible) {
       const cellSize = 100 / gridSize;
@@ -367,22 +359,19 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   }
   
-  // Toggle grid options visibility
   toggleGridBtn.addEventListener('click', function(e) {
     e.stopPropagation();
-    e.preventDefault(); // Add this to prevent any default behavior
+    e.preventDefault();
     console.log('Grid button clicked');
     gridOptions.classList.toggle('show');
   });
   
-  // Close grid options when clicking elsewhere
   document.addEventListener('click', function(e) {
     if (!e.target.closest('.grid-controls')) {
       gridOptions.classList.remove('show');
     }
   });
   
-  // Grid size selection
   document.querySelectorAll('.grid-options button').forEach(btn => {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
@@ -394,7 +383,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
   });
   
-  // Toggle grid visibility on double click
   toggleGridBtn.addEventListener('dblclick', function(e) {
     e.preventDefault();
     gridVisible = !gridVisible;
@@ -404,37 +392,40 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   });
   
-  // Initialize grid
   updateGrid();
 });
 
-
-// Button Handler - Modified for iOS detection
+// Improved Flashlight Button Handler
 document.getElementById('toggle-flashlight-btn').addEventListener('click', async () => {
   const btn = document.getElementById('toggle-flashlight-btn');
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   
-  if (isIOS) {
+  // iOS handling
+  if (flashlight.isIOS) {
     btn.innerHTML = '<i class="fas fa-ban"></i> NOT SUPPORTED';
     btn.disabled = true;
     return;
   }
+
+  btn.disabled = true;
+  btn.classList.add('loading');
   
   try {
     const success = await flashlight.toggle();
-    btn.innerHTML = flashlight.flashlightOn 
-      ? '<i class="fas fa-lightbulb"></i> FLASH ON' 
-      : '<i class="fas fa-lightbulb"></i> FLASH OFF';
-    btn.classList.toggle('active', flashlight.flashlightOn);
     
-    if (!success && flashlight.flashlightOn) {
+    if (success) {
+      btn.innerHTML = flashlight.flashlightOn 
+        ? '<i class="fas fa-lightbulb"></i> FLASH ON' 
+        : '<i class="fas fa-lightbulb"></i> FLASH OFF';
+      btn.classList.toggle('active', flashlight.flashlightOn);
+    } else {
       btn.innerHTML = '<i class="fas fa-lightbulb"></i> NO FLASH';
     }
   } catch (err) {
     console.error("Flashlight error:", err);
     btn.innerHTML = '<i class="fas fa-ban"></i> NOT SUPPORTED';
-    btn.disabled = true;
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
   }
 });
 
@@ -442,27 +433,22 @@ document.getElementById('toggle-flashlight-btn').addEventListener('click', async
 window.addEventListener('load', function() {
     const templatePath = localStorage.getItem('selectedTemplatePath');
     
-    // Debugging logs
     console.log('AR Page Loaded - Checking for template');
     console.log('Template path from storage:', templatePath);
 
     if (templatePath) {
         console.log("Loading template:", templatePath);
         
-        // Error handling
         overlay.onerror = function() {
             console.error("Failed to load template image:", templatePath);
             overlay.alt = "Failed to load template";
             alert("Couldn't load the selected template. Please try again.");
         };
 
-        // When image loads successfully
         overlay.onload = function() {
             console.log("Template image loaded successfully");
             overlay.style.display = 'block';
             overlay.style.opacity = 0.7;
-            
-            // Center the image (if not already handled by your CSS)
             overlay.style.position = 'absolute';
             overlay.style.top = '50%';
             overlay.style.left = '50%';
@@ -472,10 +458,7 @@ window.addEventListener('load', function() {
             overlay.style.zIndex = '10';
         };
 
-        // Set the image source (this triggers loading)
         overlay.src = templatePath;
-        
-        // Clear storage after loading
         localStorage.removeItem('selectedTemplatePath');
     }
 });
