@@ -77,9 +77,9 @@
     <script>
         // In your templates.html
         function selectTemplate(filename) {
-            // Store the COMPLETE image path WITH EXTENSION
-            const imagePath = `/static/templates/${filename}.jpeg`;  // Note the .jpeg
+            const imagePath = `/static/templates/${filename}.jpeg`;
             localStorage.setItem('selectedTemplatePath', imagePath);
+            localStorage.setItem('isTemplate', 'true');  // Add this flag
             window.location.href = '/ar';
         }
     </script>
