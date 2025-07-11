@@ -2,6 +2,8 @@ class FlashlightController {
   constructor() {
     this.flashlightOn = false;
     this.track = null;
+    this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   }
 
   async init() {
@@ -59,7 +61,7 @@ class FlashlightController {
   }
 
   isSupported() {
-    // More reliable support check
+    if (this.isIOS) return false;
     return 'mediaDevices' in navigator && 
            'getUserMedia' in navigator.mediaDevices;
   }
@@ -407,9 +409,17 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 
-// Button Handler
+// Button Handler - Modified for iOS detection
 document.getElementById('toggle-flashlight-btn').addEventListener('click', async () => {
   const btn = document.getElementById('toggle-flashlight-btn');
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  
+  if (isIOS) {
+    btn.innerHTML = '<i class="fas fa-ban"></i> NOT SUPPORTED';
+    btn.disabled = true;
+    return;
+  }
   
   try {
     const success = await flashlight.toggle();
