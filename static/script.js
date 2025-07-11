@@ -455,10 +455,11 @@ window.addEventListener('load', function() {
             overlay.style.transform = 'translate(-50%, -50%)';
             overlay.style.maxWidth = '80%';
             overlay.style.maxHeight = '80%';
-            overlay.style.zIndex = '10';
+            overlay.style.zIndex = '2'; // Changed from 10 to 2 to match uploaded images
         };
 
         overlay.src = templatePath;
         localStorage.removeItem('selectedTemplatePath');
     }
+});
 });
