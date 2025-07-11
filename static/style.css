@@ -469,3 +469,16 @@ body, html {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Navigation elements stay on top */
+#nav-toggle,
+#nav-menu,
+#right-nav-toggle,
+#right-nav-menu {
+  z-index: 3; /* Highest layer */
+}
+
+/* Controls stay above overlay but below side navs */
+#controls {
+  z-index: 2.5; /* Between overlay and navs */
+}
