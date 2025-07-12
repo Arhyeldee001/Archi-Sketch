@@ -56,29 +56,40 @@
 <body>
     <h1 style="text-align: center; margin: 30px 0;">🏛️ Architecture Templates</h1>
     
-    <div class="gallery">
-        <div class="template">
-            <img src="/static/templates/floorplan1.jpeg" class="template-img" alt="Modern Floorplan">
-            <div class="template-info">
-                <h3>Modern Floorplan</h3>
-                <button class="select-btn" onclick="selectTemplate('floorplan1')">Select</button>
-            </div>
-        </div>
-        <div class="template">
-            <img src="/static/templates/elevation1.jpeg" class="template-img" alt="Building Elevation">
-            <div class="template-info">
-                <h3>Building Elevation</h3>
-                <button class="select-btn" onclick="selectTemplate('elevation1')">Select</button>
-            </div>
-        </div>
-        <!-- Add more templates as needed -->
+    <div class="gallery" id="templatesGallery">
+        <!-- Templates will load here automatically -->
     </div>
-
     <script>
-        // In your templates.html
+    // Load templates dynamically
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/get-templates')  // This endpoint needs to be created (see step 2)
+                .then(response => response.json())
+                .then(templates => {
+                    const gallery = document.getElementById('templatesGallery');
+                    
+                    templates.forEach(template => {
+                        const templateDiv = document.createElement('div');
+                        templateDiv.className = 'template';
+                        
+                        templateDiv.innerHTML = `
+                            <img src="/static/templates/${template.filename}" class="template-img" alt="${template.name}">
+                            <div class="template-info">
+                                <h3>${template.name}</h3>
+                                <button class="select-btn" onclick="selectTemplate('${template.filename.split('.')[0]}')">
+                                    Select
+                                </button>
+                            </div>
+                        `;
+                        
+                        gallery.appendChild(templateDiv);
+                    });
+                })
+                .catch(error => console.error('Error loading templates:', error));
+        });
+    
+        // Keep this function exactly as is
         function selectTemplate(filename) {
-            // Store the COMPLETE image path WITH EXTENSION
-            const imagePath = `/static/templates/${filename}.jpeg`;  // Note the .jpeg
+            const imagePath = `/static/templates/${filename}.jpeg`;
             localStorage.setItem('selectedTemplatePath', imagePath);
             window.location.href = '/ar';
         }
