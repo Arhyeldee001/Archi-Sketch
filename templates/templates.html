@@ -1,13 +1,21 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Template Gallery</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Template Gallery | ArchiSketch</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
             font-family: 'Segoe UI', sans-serif;
             margin: 0;
             padding: 20px;
             background-color: #f5f7fa;
+        }
+        h1 {
+            text-align: center;
+            margin: 30px 0;
+            color: #2d3748;
         }
         .gallery {
             display: grid;
@@ -50,48 +58,98 @@
             border-radius: 6px;
             cursor: pointer;
             font-weight: 600;
+            transition: background 0.3s;
+        }
+        .select-btn:hover {
+            background: #4338ca;
+        }
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .loading i {
+            font-size: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <h1 style="text-align: center; margin: 30px 0;">🏛️ Architecture Templates</h1>
+    <h1><i class="fas fa-images"></i> Architecture Templates</h1>
     
     <div class="gallery" id="templatesGallery">
-        <!-- Templates will load here automatically -->
+        <div class="loading">
+            <i class="fas fa-spinner"></i> Loading templates...
+        </div>
     </div>
-    <script>
-    // Load templates dynamically
-        document.addEventListener('DOMContentLoaded', function() {
-            fetch('/get-templates')  // This endpoint needs to be created (see step 2)
-                .then(response => response.json())
-                .then(templates => {
-                    const gallery = document.getElementById('templatesGallery');
-                    
-                    templates.forEach(template => {
-                        const templateDiv = document.createElement('div');
-                        templateDiv.className = 'template';
-                        
-                        templateDiv.innerHTML = `
-                            <img src="/static/templates/${template.filename}" class="template-img" alt="${template.name}">
-                            <div class="template-info">
-                                <h3>${template.name}</h3>
-                                <button class="select-btn" onclick="selectTemplate('${template.filename.split('.')[0]}')">
-                                    Select
-                                </button>
-                            </div>
-                        `;
-                        
-                        gallery.appendChild(templateDiv);
-                    });
-                })
-                .catch(error => console.error('Error loading templates:', error));
-        });
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-storage-compat.js"></script>
     
-        // Keep this function exactly as is
+    <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "archisketch-templates.firebaseapp.com",
+            projectId: "archisketch-templates",
+            storageBucket: "archisketch-templates.appspot.com",
+            appId: "YOUR_APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const storage = firebase.storage();
+
+        // Load templates from Firebase
+        document.addEventListener('DOMContentLoaded', async () => {
+            const gallery = document.getElementById('templatesGallery');
+            
+            try {
+                const storageRef = storage.ref('templates');
+                const files = await storageRef.listAll();
+                
+                if (files.items.length === 0) {
+                    gallery.innerHTML = '<p style="text-align:center; grid-column:1/-1">No templates found. Check back later!</p>';
+                    return;
+                }
+                
+                gallery.innerHTML = ''; // Clear loading message
+                
+                for (const fileRef of files.items) {
+                    const url = await fileRef.getDownloadURL();
+                    const name = fileRef.name
+                        .replace(/-/g, ' ')
+                        .replace(/\b\w/g, l => l.toUpperCase());
+                    
+                    const templateDiv = document.createElement('div');
+                    templateDiv.className = 'template';
+                    templateDiv.innerHTML = `
+                        <img src="${url}" class="template-img" alt="${name}">
+                        <div class="template-info">
+                            <h3>${name}</h3>
+                            <button class="select-btn" onclick="selectTemplate('${fileRef.name}')">
+                                Select
+                            </button>
+                        </div>
+                    `;
+                    gallery.appendChild(templateDiv);
+                }
+            } catch (error) {
+                gallery.innerHTML = `
+                    <p style="text-align:center; grid-column:1/-1; color:#991b1b;">
+                        <i class="fas fa-exclamation-triangle"></i> Failed to load templates. Please refresh.
+                    </p>
+                `;
+                console.error("Error loading templates:", error);
+            }
+        });
+
         function selectTemplate(filename) {
-            const imagePath = `/static/templates/${filename}.jpeg`;
-            localStorage.setItem('selectedTemplatePath', imagePath);
-            window.location.href = '/ar';
+            localStorage.setItem('selectedTemplate', filename);
+            window.location.href = 'index.html'; // Your AR viewer page
         }
     </script>
 </body>
