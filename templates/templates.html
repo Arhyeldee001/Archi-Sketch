@@ -96,63 +96,81 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-            const gallery = document.getElementById('templatesGallery');
-            const GITHUB_REPO = "Arhyeldee001/Archi-Sketch-Templates"; // CASE-SENSITIVE
-            const BRANCH = "main"; // or "master"
+        const gallery = document.getElementById('templatesGallery');
+        const GITHUB_REPO = "Arhyeldee001/Archi-Sketch-Templates"; // With hyphen
+        const BRANCH = "main";
+        const TEMPLATES_PATH = "templates/templates"; // Nested path
     
-            try {
-                // Test URL - paste this in your browser first to verify
-                const testUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/templates?ref=${BRANCH}`;
-                console.log("Testing GitHub URL:", testUrl); // Check browser console
-                
-                const response = await fetch(testUrl, {
+        try {
+            // 1. Fetch contents of the nested templates folder
+            const response = await fetch(
+                `https://api.github.com/repos/${GITHUB_REPO}/contents/${TEMPLATES_PATH}?ref=${BRANCH}`,
+                {
                     headers: { 'Accept': 'application/vnd.github.v3+json' }
-                });
-    
-                if (response.status === 404) {
-                    throw new Error(`Repository not found. Double-check:
-                    1. "ArchiSketch-Templates" exists under your account
-                    2. It contains a "templates/" folder
-                    3. Repository is public`);
                 }
-    
-                const files = await response.json();
-                gallery.innerHTML = files.map(file => `
-                    <div class="template">
-                        <img src="https://raw.githubusercontent.com/${GITHUB_REPO}/${BRANCH}/templates/${file.name}" 
-                             class="template-img">
-                        <div class="template-info">
-                            <h3>${file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' ')}</h3>
-                            <button class="select-btn" 
-                                onclick="selectTemplate('${file.name.replace(/\.[^/.]+$/, "")}')">
-                                Select
-                            </button>
+            );
+            
+            if (!response.ok) throw new Error("Failed to fetch templates");
+            
+            const files = await response.json();
+            
+            // 2. Clear loading message
+            gallery.innerHTML = '';
+            
+            // 3. Process image files
+            files.forEach(file => {
+                if (file.type === "file" && file.name.match(/\.(jpe?g|png|webp)$/i)) {
+                    const name = file.name
+                        .replace(/\.[^/.]+$/, "") // Remove extension
+                        .replace(/[-_]/g, ' ')    // Convert -/_ to spaces
+                        .replace(/\b\w/g, l => l.toUpperCase()); // Capitalize
+                    
+                    const imgUrl = file.download_url; // Use GitHub's direct download link
+                    
+                    gallery.innerHTML += `
+                        <div class="template">
+                            <img src="${imgUrl}" class="template-img" alt="${name}" loading="lazy">
+                            <div class="template-info">
+                                <h3>${name}</h3>
+                                <button class="select-btn" 
+                                    onclick="selectTemplate('${file.name.replace(/\.[^/.]+$/, "")}')">
+                                    Select
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                `).join('');
+                    `;
+                }
+            });
     
-            } catch (error) {
+            if (gallery.innerHTML === '') {
                 gallery.innerHTML = `
                     <div class="error">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        Configuration error:<br>
-                        • Verify <strong>${GITHUB_REPO}</strong> exists<br>
-                        • Check browser console for details<br>
-                        <small>${error.message}</small>
+                        <i class="fas fa-exclamation-circle"></i>
+                        No images found in <code>${TEMPLATES_PATH}</code>.
+                        Upload JPEG/PNG files to this folder.
                     </div>
                 `;
-                console.error("Debug info:", {
-                    repo: GITHUB_REPO,
-                    branch: BRANCH,
-                    error
-                });
             }
-        });
     
-        function selectTemplate(filename) {
-            localStorage.setItem('selectedTemplate', filename);
-            window.location.href = 'index.html';
+        } catch (error) {
+            gallery.innerHTML = `
+                <div class="error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Failed to load templates:<br>
+                    <small>${error.message}</small>
+                </div>
+            `;
+            console.error("Debug info:", {
+                repo: GITHUB_REPO,
+                path: TEMPLATES_PATH,
+                error
+            });
         }
-</script>
+    });
+    
+    function selectTemplate(filename) {
+        localStorage.setItem('selectedTemplate', filename);
+        window.location.href = 'index.html'; 
+    }</script>
 </body>
 </html>
