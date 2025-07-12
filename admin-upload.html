@@ -1,7 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Admin Template Upload</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Template Upload | ArchiSketch</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
             font-family: 'Segoe UI', sans-serif;
@@ -14,6 +17,7 @@
         h1 {
             text-align: center;
             margin: 30px 0;
+            color: #2d3748;
         }
         .upload-container {
             background: white;
@@ -114,7 +118,6 @@
             color: #991b1b;
         }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <h1><i class="fas fa-upload"></i> Admin Template Upload</h1>
@@ -136,161 +139,165 @@
         <div class="status-message" id="statusMessage" style="display: none;"></div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-storage-compat.js"></script>
+    
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const uploadArea = document.getElementById('uploadArea');
-            const fileInput = document.getElementById('fileInput');
-            const previewContainer = document.getElementById('previewContainer');
-            const uploadBtn = document.getElementById('uploadBtn');
-            const statusMessage = document.getElementById('statusMessage');
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "archisketch-templates.firebaseapp.com",
+            projectId: "archisketch-templates",
+            storageBucket: "archisketch-templates.appspot.com",
+            appId: "YOUR_APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const storage = firebase.storage();
+
+        // DOM Elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const statusMessage = document.getElementById('statusMessage');
+        
+        let files = [];
+        
+        // Handle drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#4f46e5';
+            uploadArea.style.backgroundColor = '#f8fafc';
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#cbd5e0';
+            uploadArea.style.backgroundColor = 'white';
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#cbd5e0';
+            uploadArea.style.backgroundColor = 'white';
             
-            let files = [];
-            
-            // Handle drag and drop
-            uploadArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                uploadArea.style.borderColor = '#4f46e5';
-                uploadArea.style.backgroundColor = '#f8fafc';
-            });
-            
-            uploadArea.addEventListener('dragleave', () => {
-                uploadArea.style.borderColor = '#cbd5e0';
-                uploadArea.style.backgroundColor = 'white';
-            });
-            
-            uploadArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                uploadArea.style.borderColor = '#cbd5e0';
-                uploadArea.style.backgroundColor = 'white';
-                
-                if (e.dataTransfer.files.length) {
-                    handleFiles(e.dataTransfer.files);
-                }
-            });
-            
-            // Handle click to select files
-            uploadArea.addEventListener('click', () => {
-                fileInput.click();
-            });
-            
-            fileInput.addEventListener('change', () => {
-                if (fileInput.files.length) {
-                    handleFiles(fileInput.files);
-                }
-            });
-            
-            // Handle file processing
-            function handleFiles(newFiles) {
-                for (let i = 0; i < newFiles.length; i++) {
-                    const file = newFiles[i];
-                    if (file.type.startsWith('image/')) {
-                        files.push(file);
-                    }
-                }
-                
-                if (files.length > 0) {
-                    uploadBtn.disabled = false;
-                    renderPreviews();
-                }
-            }
-            
-            // Render image previews
-            function renderPreviews() {
-                previewContainer.innerHTML = '';
-                
-                files.forEach((file, index) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const previewItem = document.createElement('div');
-                        previewItem.className = 'preview-item';
-                        
-                        const img = document.createElement('img');
-                        img.src = e.target.result;
-                        img.alt = file.name;
-                        
-                        const removeBtn = document.createElement('button');
-                        removeBtn.className = 'remove-btn';
-                        removeBtn.innerHTML = '<i class="fas fa-times"></i>';
-                        removeBtn.onclick = () => removeFile(index);
-                        
-                        const nameInput = document.createElement('input');
-                        nameInput.type = 'text';
-                        nameInput.className = 'name-input';
-                        nameInput.placeholder = 'Template name';
-                        nameInput.value = file.name.split('.')[0]; // Default to filename without extension
-                        
-                        previewItem.appendChild(img);
-                        previewItem.appendChild(removeBtn);
-                        previewItem.appendChild(nameInput);
-                        
-                        previewContainer.appendChild(previewItem);
-                    };
-                    reader.readAsDataURL(file);
-                });
-            }
-            
-            // Remove file from list
-            function removeFile(index) {
-                files.splice(index, 1);
-                if (files.length === 0) {
-                    uploadBtn.disabled = true;
-                }
-                renderPreviews();
-            }
-            
-            // Handle upload
-            uploadBtn.addEventListener('click', async () => {
-                if (files.length === 0) return;
-                
-                uploadBtn.disabled = true;
-                uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-                
-                try {
-                    const formData = new FormData();
-                    
-                    // Get all template names from inputs
-                    const nameInputs = document.querySelectorAll('.name-input');
-                    const templateNames = Array.from(nameInputs).map(input => input.value.trim() || input.placeholder);
-                    
-                    files.forEach((file, index) => {
-                        formData.append('templates', file);
-                        formData.append('names', templateNames[index]);
-                    });
-                    
-                    const response = await fetch('/upload-templates', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (response.ok) {
-                        showStatus('Templates uploaded successfully!', 'success');
-                        files = [];
-                        renderPreviews();
-                    } else {
-                        throw new Error(result.message || 'Upload failed');
-                    }
-                } catch (error) {
-                    showStatus(`Error: ${error.message}`, 'error');
-                    console.error('Upload error:', error);
-                } finally {
-                    uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Templates';
-                    uploadBtn.disabled = files.length === 0;
-                }
-            });
-            
-            // Show status message
-            function showStatus(message, type) {
-                statusMessage.textContent = message;
-                statusMessage.className = `status-message ${type}`;
-                statusMessage.style.display = 'block';
-                
-                setTimeout(() => {
-                    statusMessage.style.display = 'none';
-                }, 5000);
+            if (e.dataTransfer.files.length) {
+                handleFiles(e.dataTransfer.files);
             }
         });
+        
+        // Handle click to select files
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) {
+                handleFiles(fileInput.files);
+            }
+        });
+        
+        // Process selected files
+        function handleFiles(newFiles) {
+            for (let i = 0; i < newFiles.length; i++) {
+                const file = newFiles[i];
+                if (file.type.startsWith('image/')) {
+                    files.push(file);
+                }
+            }
+            
+            if (files.length > 0) {
+                uploadBtn.disabled = false;
+                renderPreviews();
+            }
+        }
+        
+        // Show preview thumbnails
+        function renderPreviews() {
+            previewContainer.innerHTML = '';
+            
+            files.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'preview-item';
+                    
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.alt = file.name;
+                    
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'remove-btn';
+                    removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                    removeBtn.onclick = () => removeFile(index);
+                    
+                    const nameInput = document.createElement('input');
+                    nameInput.type = 'text';
+                    nameInput.className = 'name-input';
+                    nameInput.placeholder = 'Template name';
+                    nameInput.value = file.name.split('.')[0].replace(/-/g, ' ').replace(/_/g, ' ');
+                    
+                    previewItem.appendChild(img);
+                    previewItem.appendChild(removeBtn);
+                    previewItem.appendChild(nameInput);
+                    
+                    previewContainer.appendChild(previewItem);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        // Remove file from upload queue
+        function removeFile(index) {
+            files.splice(index, 1);
+            if (files.length === 0) {
+                uploadBtn.disabled = true;
+            }
+            renderPreviews();
+        }
+        
+        // Upload to Firebase
+        uploadBtn.addEventListener('click', async () => {
+            if (files.length === 0) return;
+            
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            
+            try {
+                const nameInputs = document.querySelectorAll('.name-input');
+                
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const name = nameInputs[i].value.trim() || file.name.split('.')[0];
+                    const sanitizedName = name.replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').toLowerCase();
+                    const storageRef = storage.ref(`templates/${sanitizedName}`);
+                    
+                    await storageRef.put(file);
+                    console.log(`${name} uploaded successfully!`);
+                }
+                
+                showStatus('Templates uploaded successfully! All users can now see them.', 'success');
+                files = [];
+                renderPreviews();
+            } catch (error) {
+                showStatus(`Upload failed: ${error.message}`, 'error');
+                console.error('Upload error:', error);
+            } finally {
+                uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Templates';
+                uploadBtn.disabled = files.length === 0;
+            }
+        });
+        
+        // Show status message
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message ${type}`;
+            statusMessage.style.display = 'block';
+            
+            setTimeout(() => {
+                statusMessage.style.display = 'none';
+            }, 5000);
+        }
     </script>
 </body>
 </html>
