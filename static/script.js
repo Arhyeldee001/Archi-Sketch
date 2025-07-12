@@ -430,35 +430,36 @@ document.getElementById('toggle-flashlight-btn').addEventListener('click', async
 });
 
 // Wait for DOM and all resources to load
-window.addEventListener('load', function() {
-    const templatePath = localStorage.getItem('selectedTemplatePath');
+window.addEventListener('load', async function() {
+    // Load template from GitHub if selected
+    const templateName = localStorage.getItem('selectedTemplate');
     
-    console.log('AR Page Loaded - Checking for template');
-    console.log('Template path from storage:', templatePath);
-
-    if (templatePath) {
-        console.log("Loading template:", templatePath);
+    if (templateName) {
+        console.log("Loading template:", templateName);
         
-        overlay.onerror = function() {
-            console.error("Failed to load template image:", templatePath);
-            overlay.alt = "Failed to load template";
-            alert("Couldn't load the selected template. Please try again.");
-        };
+        try {
+            const githubRawUrl = `https://raw.githubusercontent.com/your-username/archisketch-templates/main/templates/${templateName}.jpg`;
+            
+            overlay.onerror = function() {
+                console.error("Failed to load template image");
+                alert("Couldn't load the selected template. Please try again.");
+            };
 
-        overlay.onload = function() {
-            console.log("Template image loaded successfully");
-            overlay.style.display = 'block';
-            overlay.style.opacity = 0.7;
-            overlay.style.position = 'absolute';
-            overlay.style.top = '50%';
-            overlay.style.left = '50%';
-            overlay.style.transform = 'translate(-50%, -50%)';
-            overlay.style.maxWidth = '80%';
-            overlay.style.maxHeight = '80%';
-            overlay.style.zIndex = '2';
-        };
+            overlay.onload = function() {
+                console.log("Template image loaded successfully");
+                overlay.style.display = 'block';
+                overlay.style.opacity = 0.7;
+                overlay.style.zIndex = '2'; // Ensure it stays below nav bars
+            };
 
-        overlay.src = templatePath;
-        localStorage.removeItem('selectedTemplatePath');
+            overlay.src = githubRawUrl;
+            localStorage.removeItem('selectedTemplate'); // Clear after loading
+            
+        } catch (error) {
+            console.error("Template loading error:", error);
+        }
     }
+
+    // Keep your existing initialization code below
+    // (camera, flashlight, etc. - don't modify these)
 });
