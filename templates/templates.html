@@ -95,96 +95,64 @@
     </div>
 
     <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-        const gallery = document.getElementById('templatesGallery');
-        const GITHUB_REPO = "Arhyeldee001/ArchiSketch-Templates"; // REPLACE WITH YOUR GITHUB USERNAME
-        const BRANCH = "main"; // Change if using a different branch
-
-        // Show loading state
-        gallery.innerHTML = `
-            <div class="loading">
-                <i class="fas fa-spinner fa-spin"></i> Loading templates...
-            </div>
-        `;
-
-        try {
-            // Fetch template list from GitHub with cache busting
-            const response = await fetch(
-                `https://api.github.com/repos/${GITHUB_REPO}/contents/templates?ref=${BRANCH}&ts=${Date.now()}`,
-                {
-                    headers: {
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
+        document.addEventListener('DOMContentLoaded', async () => {
+            const gallery = document.getElementById('templatesGallery');
+            const GITHUB_REPO = "Arhyeldee001/ArchiSketch-Templates"; // CASE-SENSITIVE
+            const BRANCH = "main"; // or "master"
+    
+            try {
+                // Test URL - paste this in your browser first to verify
+                const testUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/templates?ref=${BRANCH}`;
+                console.log("Testing GitHub URL:", testUrl); // Check browser console
+                
+                const response = await fetch(testUrl, {
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
+                });
+    
+                if (response.status === 404) {
+                    throw new Error(`Repository not found. Double-check:
+                    1. "ArchiSketch-Templates" exists under your account
+                    2. It contains a "templates/" folder
+                    3. Repository is public`);
                 }
-            );
-
-            if (!response.ok) {
-                throw new Error(`GitHub API error: ${response.status}`);
-            }
-
-            const files = await response.json();
-
-            // Clear loading message
-            gallery.innerHTML = '';
-
-            // Process each valid image file
-            files.forEach(file => {
-                if (file.type === "file" && file.name.match(/\.(jpe?g|png|webp)$/i)) {
-                    const name = file.name
-                        .replace(/\.[^/.]+$/, "") // Remove extension
-                        .replace(/[-_]/g, ' ')    // Convert -/_ to spaces
-                        .replace(/\b\w/g, l => l.toUpperCase()); // Capitalize words
-
-                    const imgUrl = `https://raw.githubusercontent.com/${GITHUB_REPO}/${BRANCH}/templates/${encodeURIComponent(file.name)}`;
-                    
-                    gallery.innerHTML += `
-                        <div class="template">
-                            <img src="${imgUrl}" class="template-img" alt="${name}" loading="lazy">
-                            <div class="template-info">
-                                <h3>${name}</h3>
-                                <button class="select-btn" 
-                                    onclick="selectTemplate('${file.name.replace(/\.[^/.]+$/, "")}')">
-                                    Select
-                                </button>
-                            </div>
+    
+                const files = await response.json();
+                gallery.innerHTML = files.map(file => `
+                    <div class="template">
+                        <img src="https://raw.githubusercontent.com/${GITHUB_REPO}/${BRANCH}/templates/${file.name}" 
+                             class="template-img">
+                        <div class="template-info">
+                            <h3>${file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' ')}</h3>
+                            <button class="select-btn" 
+                                onclick="selectTemplate('${file.name.replace(/\.[^/.]+$/, "")}')">
+                                Select
+                            </button>
                         </div>
-                    `;
-                }
-            });
-
-            // Show message if no templates found
-            if (gallery.innerHTML === '') {
+                    </div>
+                `).join('');
+    
+            } catch (error) {
                 gallery.innerHTML = `
-                    <div class="error" style="grid-column:1/-1">
-                        <i class="fas fa-exclamation-circle"></i>
-                        No templates found in repository. Upload images to:
-                        <code>templates/</code> folder on GitHub.
+                    <div class="error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Configuration error:<br>
+                        • Verify <strong>${GITHUB_REPO}</strong> exists<br>
+                        • Check browser console for details<br>
+                        <small>${error.message}</small>
                     </div>
                 `;
+                console.error("Debug info:", {
+                    repo: GITHUB_REPO,
+                    branch: BRANCH,
+                    error
+                });
             }
-
-        } catch (error) {
-            console.error("Template loading failed:", error);
-            gallery.innerHTML = `
-                <div class="error" style="grid-column:1/-1">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    Failed to load templates. Possible solutions:<br><br>
-                    1. Ensure repository <strong>ArchiSketch-Templates</strong> is <strong>public</strong><br>
-                    2. Check network isn't blocking GitHub<br>
-                    3. Verify folder <code>templates/</code> exists<br><br>
-                    <small>Error details: ${error.message}</small>
-                </div>
-            `;
+        });
+    
+        function selectTemplate(filename) {
+            localStorage.setItem('selectedTemplate', filename);
+            window.location.href = 'index.html';
         }
-    });
-
-    function selectTemplate(filename) {
-        // Store just the filename (without extension)
-        localStorage.setItem('selectedTemplate', filename);
-        
-        // Redirect to AR viewer
-        window.location.href = 'index.html'; 
-    }
 </script>
 </body>
 </html>
