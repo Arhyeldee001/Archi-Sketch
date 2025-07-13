@@ -1,102 +1,229 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Archisketch Templates</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Your existing styles here */
-        .template-img {
-            max-width: 100%;
-            height: auto;
-            border: 1px solid #ddd;
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4895ef;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
         }
-        .template {
-            margin: 10px;
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem 1rem;
             text-align: center;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        #templatesGallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            padding: 1rem;
+        }
+        
+        .template-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .template-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+        
+        .template-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .template-info {
+            padding: 1.2rem;
+        }
+        
+        .template-info h3 {
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+            font-size: 1.2rem;
+        }
+        
+        .select-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+            transition: background 0.3s;
+        }
+        
+        .select-btn:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+        
+        @media (max-width: 768px) {
+            #templatesGallery {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Select a Template</h1>
-    <div id="templatesGallery"></div>
+    <button class="back-btn" onclick="window.history.back()">
+        <i class="fas fa-arrow-left"></i>
+    </button>
+    
+    <header>
+        <div class="container">
+            <h1>Archisketch Templates</h1>
+            <p class="subtitle">Select a template to overlay on your camera view</p>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div id="templatesGallery">
+            <!-- Templates will be loaded here -->
+            <div class="loading" style="text-align: center; grid-column: 1/-1;">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                <p>Loading templates...</p>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // 1. CONFIGURATION - Set these once
-        const CONFIG = {
-            GITHUB_USER: "Arhyeldee001",
-            REPO_NAME: "Archi-Sketch-Templates",
-            BRANCH: "main",
-            TEMPLATES_FOLDER: "templates"
-        };
-
-        // 2. Fetch images using GitHub Contents API
-        async function loadTemplates() {
+        // SIMPLE TEMPLATE LOADER - NO API CALLS
+        document.addEventListener('DOMContentLoaded', () => {
             const gallery = document.getElementById('templatesGallery');
-            gallery.innerHTML = '<p>Loading templates...</p>';
-
-            try {
-                const apiUrl = `https://api.github.com/repos/${CONFIG.GITHUB_USER}/${CONFIG.REPO_NAME}/contents/${CONFIG.TEMPLATES_FOLDER}?ref=${CONFIG.BRANCH}`;
+            
+            // 1. MANUALLY LIST ALL TEMPLATE FILENAMES (just the names)
+            const templateFiles = [
+                "floorplan1.png",
+                "elevation1.jpg", 
+                "blueprint1.png"
+                // Add ALL your template filenames here
+            ];
+            
+            // Clear loading message
+            gallery.innerHTML = '';
+            
+            // 2. Generate template cards
+            templateFiles.forEach(filename => {
+                const name = filename
+                    .replace(/\.[^/.]+$/, "") // Remove extension
+                    .replace(/[-_]/g, ' ')    // Convert underscores/dashes to spaces
+                    .replace(/\b\w/g, l => l.toUpperCase()); // Capitalize words
                 
-                const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error(`GitHub API error: ${response.status}`);
+                const templateUrl = `https://raw.githubusercontent.com/Arhyeldee001/Archi-Sketch-Templates/main/templates/${filename}`;
                 
-                const files = await response.json();
-                gallery.innerHTML = ''; // Clear loading message
-
-                // 3. Process image files
-                files.forEach(file => {
-                    if (file.name.match(/\.(jpg|jpeg|png|webp)$/i)) {
-                        const rawUrl = `https://raw.githubusercontent.com/${CONFIG.GITHUB_USER}/${CONFIG.REPO_NAME}/${CONFIG.BRANCH}/${CONFIG.TEMPLATES_FOLDER}/${file.name}`;
-                        
-                        const templateDiv = document.createElement('div');
-                        templateDiv.className = 'template';
-                        templateDiv.innerHTML = `
-                            <img src="${rawUrl}" class="template-img" 
-                                 onerror="this.style.display='none'">
-                            <button onclick="selectTemplate('${file.name}')">
-                                Select ${file.name.replace(/\.[^/.]+$/, "")}
-                            </button>
-                        `;
-                        
-                        gallery.appendChild(templateDiv);
-                    }
-                });
-
-                if (gallery.children.length === 0) {
-                    gallery.innerHTML = '<p>No templates found in repository.</p>';
-                }
-
-            } catch (error) {
+                gallery.innerHTML += `
+                <div class="template-card">
+                    <img src="${templateUrl}" 
+                         alt="${name}"
+                         onerror="this.parentNode.remove()" 
+                         loading="lazy">
+                    <div class="template-info">
+                        <h3>${name}</h3>
+                        <button class="select-btn" onclick="selectTemplate('${filename}')">
+                            <i class="fas fa-check"></i> Select Template
+                        </button>
+                    </div>
+                </div>
+                `;
+            });
+            
+            if (gallery.innerHTML === '') {
                 gallery.innerHTML = `
-                    <div class="error">
-                        <p>Failed to load templates</p>
-                        <small>${error.message}</small>
-                        <p>Try <a href="javascript:location.reload()">refreshing</a></p>
+                    <div class="error" style="text-align: center; grid-column: 1/-1;">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        <h3>No Templates Found</h3>
+                        <p>Please add template images to your GitHub repository.</p>
                     </div>
                 `;
-                console.error("Template loading error:", error);
             }
-        }
+        });
 
-        // 4. Selection handler with URL verification
+        // 3. SUPER SIMPLE SELECTION
         function selectTemplate(filename) {
-            const rawUrl = `https://raw.githubusercontent.com/${CONFIG.GITHUB_USER}/${CONFIG.REPO_NAME}/${CONFIG.BRANCH}/${CONFIG.TEMPLATES_FOLDER}/${filename}`;
+            // Store the COMPLETE RAW GITHUB URL
+            const fullUrl = `https://raw.githubusercontent.com/Arhyeldee001/Archi-Sketch-Templates/main/templates/${filename}`;
+            localStorage.setItem('templateToLoad', fullUrl);
+            window.location.href = '../index.html'; // Goes up from /templates/ to root
             
-            // First verify the image exists
-            const tester = new Image();
-            tester.onload = function() {
-                // Only store URL if image loads successfully
-                localStorage.setItem('selectedTemplateUrl', rawUrl);
-                window.location.href = '../index.html'; // Adjust path as needed
-            };
-            tester.onerror = function() {
-                alert(`Error: Could not load template "${filename}"`);
-                console.error('Failed to load:', rawUrl);
-            };
-            tester.src = rawUrl;
+            console.log('Selected template:', filename, 'URL:', fullUrl);
         }
-
-        // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', loadTemplates);
     </script>
 </body>
 </html>
