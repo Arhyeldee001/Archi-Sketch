@@ -149,9 +149,9 @@
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const gallery = document.getElementById('templatesGallery');
-            const GITHUB_REPO = "Arhyeldee001/Archi-Sketch-Templates"; // Your repo name
+            const GITHUB_REPO = "Arhyeldee001/Archi-Sketch-Templates";
             const BRANCH = "main";
-            const TEMPLATES_PATH = "templates"; // Path to your templates folder
+            const TEMPLATES_PATH = "templates";
             
             try {
                 // 1. Fetch contents of the templates folder
@@ -182,11 +182,12 @@
                         
                         gallery.innerHTML += `
                             <div class="template">
-                                <img src="${imgUrl}" class="template-img" alt="${name}" loading="lazy">
+                                <img src="${imgUrl}" class="template-img" alt="${name}" loading="lazy"
+                                     onerror="this.parentNode.style.display='none'">
                                 <div class="template-info">
                                     <h3>${name}</h3>
                                     <button class="select-btn" 
-                                        onclick="selectTemplate('${file.name.replace(/\.[^/.]+$/, "")}')">
+                                        onclick="selectTemplate('${file.name}')">
                                         Select
                                     </button>
                                 </div>
@@ -218,37 +219,16 @@
         });
         
         function selectTemplate(filename) {
-            // Store the FULL filename with extension
+            // Store both filename and complete URL
             localStorage.setItem('selectedTemplate', filename);
-            console.log("Selected template:", filename);
-            window.location.href = 'index.html'; 
+            localStorage.setItem('selectedTemplateUrl', 
+                `https://raw.githubusercontent.com/Arhyeldee001/Archi-Sketch-Templates/main/templates/${filename}`);
+            
+            console.log("Storing template:", filename);
+            
+            // Use correct relative path to index.html
+            window.location.href = '../index.html'; // Goes up from /templates/ to root
         }
-        
-        // And in the template generation code:
-        files.forEach(file => {
-            if (file.type === "file" && file.name.match(/\.(jpe?g|png|webp)$/i)) {
-                const name = file.name
-                    .replace(/\.[^/.]+$/, "")
-                    .replace(/[-_]/g, ' ')
-                    .replace(/\b\w/g, l => l.toUpperCase());
-                
-                // Use this URL format:
-                const imgUrl = `https://raw.githubusercontent.com/Arhyeldee001/Archi-Sketch-Templates/main/templates/${file.name}`;
-                
-                gallery.innerHTML += `
-                    <div class="template">
-                        <img src="${imgUrl}" class="template-img" alt="${name}" loading="lazy">
-                        <div class="template-info">
-                            <h3>${name}</h3>
-                            <button class="select-btn" 
-                                onclick="selectTemplate('${file.name}')"> <!-- Store full filename -->
-                                Select
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }
-        });
     </script>
 </body>
 </html>
