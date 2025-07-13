@@ -1,37 +1,34 @@
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory
+from fastapi import FastAPI, Request, UploadFile, File
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import RedirectResponse, HTMLResponse
 import os
 
-app = Flask(__name__, static_folder='static')
-app.config['UPLOAD_FOLDER'] = 'static/templates'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB limit
+app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
-# Ensure upload folder exists
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+UPLOAD_DIR = "static/templates"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-@app.route('/')
-def index():
-    return send_from_directory('.', 'index.html')
+@app.get("/", response_class=HTMLResponse)
+async def home():
+    return RedirectResponse(url="/templates")
 
-@app.route('/admin', methods=['GET', 'POST'])
-def admin():
-    if request.method == 'POST':
-        uploaded_files = request.files.getlist('templates')
-        for file in uploaded_files:
-            if file.filename != '':
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
-        return redirect(url_for('admin'))
-    
-    templates = os.listdir(app.config['UPLOAD_FOLDER'])
-    return render_template('admin.html', templates=templates)
+@app.get("/admin", response_class=HTMLResponse)
+async def admin(request: Request):
+    templates_list = os.listdir(UPLOAD_DIR)
+    return templates.TemplateResponse("admin.html", {"request": request, "templates": templates_list})
 
-@app.route('/templates')
-def template_gallery():
-    templates = os.listdir(app.config['UPLOAD_FOLDER'])
-    return render_template('templates.html', templates=templates)
+@app.post("/upload")
+async def upload(files: list[UploadFile] = File(...)):
+    for file in files:
+        file_path = os.path.join(UPLOAD_DIR, file.filename)
+        with open(file_path, "wb") as f:
+            f.write(await file.read())
+    return RedirectResponse(url="/admin", status_code=303)
 
-@app.route('/templates/<filename>')
-def serve_template(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+@app.get("/templates", response_class=HTMLResponse)
+async def template_gallery(request: Request):
+    templates_list = os.listdir(UPLOAD_DIR)
+    return templates.TemplateResponse("templates.html", {"request": request, "templates": templates_list})
