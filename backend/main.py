@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from .template_handler import router as template_router  # Note the dot prefix
 
 from backend.db import SessionLocal, init_db
 from backend.models import User
@@ -17,6 +18,10 @@ import json  # Add at top of file
 
 # Init FastAPI app
 app = FastAPI()
+
+# ↓ Add these 2 lines right after app creation ↓
+app.mount("/static", StaticFiles(directory="../static"), name="static")  # Adjusted path
+app.include_router(template_router)
 
 # Templates
 templates = Jinja2Templates(directory="templates")
