@@ -430,6 +430,7 @@ document.getElementById('toggle-flashlight-btn').addEventListener('click', async
 });
 
 // Wait for DOM and all resources to load
+// In the window.addEventListener('load', ...) section:
 window.addEventListener('load', async function() {
     // Load template from GitHub if selected
     const templateName = localStorage.getItem('selectedTemplate');
@@ -438,7 +439,11 @@ window.addEventListener('load', async function() {
         console.log("Loading template:", templateName);
         
         try {
-            const githubRawUrl = `https://raw.githubusercontent.com/your-username/archisketch-templates/main/templates/${templateName}.jpg`;
+            const GITHUB_REPO = "Arhyeldee001/Archi-Sketch-Templates";
+            const BRANCH = "main";
+            const TEMPLATES_PATH = "templates";
+            
+            const githubRawUrl = `https://raw.githubusercontent.com/${GITHUB_REPO}/${BRANCH}/${TEMPLATES_PATH}/${templateName}.jpg`;
             
             overlay.onerror = function() {
                 console.error("Failed to load template image");
@@ -449,7 +454,7 @@ window.addEventListener('load', async function() {
                 console.log("Template image loaded successfully");
                 overlay.style.display = 'block';
                 overlay.style.opacity = 0.7;
-                overlay.style.zIndex = '2'; // Ensure it stays below nav bars
+                overlay.style.zIndex = '2';
             };
 
             overlay.src = githubRawUrl;
@@ -459,7 +464,4 @@ window.addEventListener('load', async function() {
             console.error("Template loading error:", error);
         }
     }
-
-    // Keep your existing initialization code below
-    // (camera, flashlight, etc. - don't modify these)
 });
