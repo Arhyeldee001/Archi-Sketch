@@ -218,11 +218,37 @@
         });
         
         function selectTemplate(filename) {
-            // Store the selected template name in localStorage
+            // Store the FULL filename with extension
             localStorage.setItem('selectedTemplate', filename);
-            // Redirect to index.html
-            window.location.href = 'index.html';
+            console.log("Selected template:", filename);
+            window.location.href = 'index.html'; 
         }
+        
+        // And in the template generation code:
+        files.forEach(file => {
+            if (file.type === "file" && file.name.match(/\.(jpe?g|png|webp)$/i)) {
+                const name = file.name
+                    .replace(/\.[^/.]+$/, "")
+                    .replace(/[-_]/g, ' ')
+                    .replace(/\b\w/g, l => l.toUpperCase());
+                
+                // Use this URL format:
+                const imgUrl = `https://raw.githubusercontent.com/Arhyeldee001/Archi-Sketch-Templates/main/templates/${file.name}`;
+                
+                gallery.innerHTML += `
+                    <div class="template">
+                        <img src="${imgUrl}" class="template-img" alt="${name}" loading="lazy">
+                        <div class="template-info">
+                            <h3>${name}</h3>
+                            <button class="select-btn" 
+                                onclick="selectTemplate('${file.name}')"> <!-- Store full filename -->
+                                Select
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        });
     </script>
 </body>
 </html>
