@@ -430,40 +430,28 @@ document.getElementById('toggle-flashlight-btn').addEventListener('click', async
 });
 
 // Wait for DOM and all resources to load
-// Template Loader - Add this at the bottom of your script
-window.addEventListener('load', function() {
+// ===== TEMPLATE LOADER ===== //
+window.addEventListener('DOMContentLoaded', function() {
     const overlay = document.getElementById('overlay');
     const templateUrl = localStorage.getItem('selectedTemplateUrl');
     
     if (templateUrl) {
-        console.log("Attempting to load template:", templateUrl);
+        console.log('Loading template from:', templateUrl);
         
-        // First try loading directly
-        overlay.onerror = function() {
-            console.warn("Direct load failed, trying fallback...");
-            
-            // Fallback: Create a new image element to test
-            const tester = new Image();
-            tester.onload = function() {
-                overlay.src = templateUrl;
-                overlay.style.display = 'block';
-                overlay.style.opacity = opacitySlider.value;
-                console.log("Template loaded successfully via fallback");
-            };
-            tester.onerror = function() {
-                console.error("Both direct and fallback loading failed");
-                alert("Error: Template could not be loaded\n" + templateUrl);
-            };
-            tester.src = templateUrl;
-        };
-        
-        overlay.onload = function() {
-            console.log("Template loaded successfully");
+        // Create hidden loader to verify the image
+        const loader = new Image();
+        loader.onload = function() {
+            // Only apply to overlay if image loads successfully
+            overlay.src = templateUrl;
             overlay.style.display = 'block';
-            overlay.style.opacity = opacitySlider.value;
+            localStorage.removeItem('selectedTemplateUrl');
+            console.log('Template loaded successfully');
         };
-        
-        overlay.src = templateUrl;
-        localStorage.removeItem('selectedTemplateUrl');
+        loader.onerror = function() {
+            console.error('Failed to load template:', templateUrl);
+            alert('Error: The selected template could not be loaded\n\n' + 
+                  'Please check your internet connection and try again.');
+        };
+        loader.src = templateUrl;
     }
 });
