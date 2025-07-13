@@ -430,34 +430,28 @@ document.getElementById('toggle-flashlight-btn').addEventListener('click', async
 });
 
 // Wait for DOM and all resources to load
-window.addEventListener('load', async function() {
-    const templateName = localStorage.getItem('selectedTemplate');
+// Update the loader to:
+window.addEventListener('load', () => {
+    const templateUrl = localStorage.getItem('selectedTemplateUrl');
     
-    if (templateName) {
-        console.log("Loading template:", templateName);
+    if (templateUrl) {
+        console.log("Loading template from:", templateUrl);
         
-        try {
-            // Direct raw.githubusercontent URL
-            const githubRawUrl = `https://raw.githubusercontent.com/Arhyeldee001/Archi-Sketch-Templates/main/templates/${templateName}`;
-            
-            console.log("Fetching image from:", githubRawUrl);
-            
-            overlay.onerror = function() {
-                console.error("Failed to load template image");
-                alert("Couldn't load the selected template. Please try again.");
-            };
-
-            overlay.onload = function() {
-                console.log("Template image loaded successfully");
-                overlay.style.display = 'block';
-                overlay.style.opacity = 0.7;
-            };
-
-            overlay.src = githubRawUrl;
-            localStorage.removeItem('selectedTemplate');
-            
-        } catch (error) {
-            console.error("Template loading error:", error);
-        }
+        // Create test image first
+        const tester = new Image();
+        tester.src = templateUrl;
+        
+        tester.onload = () => {
+            overlay.src = templateUrl;
+            overlay.style.display = 'block';
+            console.log("Template loaded successfully");
+        };
+        
+        tester.onerror = () => {
+            console.error("Failed to load:", templateUrl);
+            alert("Template failed to load. Check console for details.");
+        };
+        
+        localStorage.removeItem('selectedTemplateUrl');
     }
 });
