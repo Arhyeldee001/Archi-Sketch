@@ -430,28 +430,25 @@ document.getElementById('toggle-flashlight-btn').addEventListener('click', async
 });
 
 // Wait for DOM and all resources to load
-// ===== TEMPLATE LOADER ===== //
-window.addEventListener('DOMContentLoaded', function() {
+// SIMPLE TEMPLATE LOADER
+window.addEventListener('DOMContentLoaded', () => {
     const overlay = document.getElementById('overlay');
-    const templateUrl = localStorage.getItem('selectedTemplateUrl');
+    const templateUrl = localStorage.getItem('templateToLoad');
     
     if (templateUrl) {
-        console.log('Loading template from:', templateUrl);
+        console.log("Attempting to load:", templateUrl);
         
-        // Create hidden loader to verify the image
-        const loader = new Image();
-        loader.onload = function() {
-            // Only apply to overlay if image loads successfully
+        // Create hidden test image
+        const tester = new Image();
+        tester.onload = () => {
             overlay.src = templateUrl;
             overlay.style.display = 'block';
-            localStorage.removeItem('selectedTemplateUrl');
-            console.log('Template loaded successfully');
+            localStorage.removeItem('templateToLoad');
         };
-        loader.onerror = function() {
-            console.error('Failed to load template:', templateUrl);
-            alert('Error: The selected template could not be loaded\n\n' + 
-                  'Please check your internet connection and try again.');
+        tester.onerror = () => {
+            console.error("FAILED TO LOAD:", templateUrl);
+            alert("Template failed to load. Please try another.");
         };
-        loader.src = templateUrl;
+        tester.src = templateUrl;
     }
 });
