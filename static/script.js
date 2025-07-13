@@ -430,25 +430,13 @@ document.getElementById('toggle-flashlight-btn').addEventListener('click', async
 });
 
 // Wait for DOM and all resources to load
-// SIMPLE TEMPLATE LOADER
+// Template loader
 window.addEventListener('DOMContentLoaded', () => {
-    const overlay = document.getElementById('overlay');
-    const templateUrl = localStorage.getItem('templateToLoad');
-    
-    if (templateUrl) {
-        console.log("Attempting to load:", templateUrl);
-        
-        // Create hidden test image
-        const tester = new Image();
-        tester.onload = () => {
-            overlay.src = templateUrl;
-            overlay.style.display = 'block';
-            localStorage.removeItem('templateToLoad');
-        };
-        tester.onerror = () => {
-            console.error("FAILED TO LOAD:", templateUrl);
-            alert("Template failed to load. Please try another.");
-        };
-        tester.src = templateUrl;
+    const templateName = localStorage.getItem('selectedTemplate');
+    if (templateName) {
+        const overlay = document.getElementById('overlay');
+        overlay.src = `/templates/${templateName}`;
+        overlay.style.display = 'block';
+        localStorage.removeItem('selectedTemplate');
     }
 });
