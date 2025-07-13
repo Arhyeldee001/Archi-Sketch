@@ -430,24 +430,40 @@ document.getElementById('toggle-flashlight-btn').addEventListener('click', async
 });
 
 // Wait for DOM and all resources to load
-// In your index.html file:
+// Template Loader - Add this at the bottom of your script
 window.addEventListener('load', function() {
+    const overlay = document.getElementById('overlay');
     const templateUrl = localStorage.getItem('selectedTemplateUrl');
     
     if (templateUrl) {
-        const overlay = document.getElementById('overlay');
+        console.log("Attempting to load template:", templateUrl);
         
-        // Pre-load to verify
-        const tester = new Image();
-        tester.onload = function() {
-            overlay.src = templateUrl;
+        // First try loading directly
+        overlay.onerror = function() {
+            console.warn("Direct load failed, trying fallback...");
+            
+            // Fallback: Create a new image element to test
+            const tester = new Image();
+            tester.onload = function() {
+                overlay.src = templateUrl;
+                overlay.style.display = 'block';
+                overlay.style.opacity = opacitySlider.value;
+                console.log("Template loaded successfully via fallback");
+            };
+            tester.onerror = function() {
+                console.error("Both direct and fallback loading failed");
+                alert("Error: Template could not be loaded\n" + templateUrl);
+            };
+            tester.src = templateUrl;
+        };
+        
+        overlay.onload = function() {
+            console.log("Template loaded successfully");
             overlay.style.display = 'block';
-            localStorage.removeItem('selectedTemplateUrl');
+            overlay.style.opacity = opacitySlider.value;
         };
-        tester.onerror = function() {
-            console.error("Failed to load template:", templateUrl);
-            alert("Template failed to load. Please try again.");
-        };
-        tester.src = templateUrl;
+        
+        overlay.src = templateUrl;
+        localStorage.removeItem('selectedTemplateUrl');
     }
 });
