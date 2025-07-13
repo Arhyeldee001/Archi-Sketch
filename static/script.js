@@ -430,28 +430,24 @@ document.getElementById('toggle-flashlight-btn').addEventListener('click', async
 });
 
 // Wait for DOM and all resources to load
-// Update the loader to:
-window.addEventListener('load', () => {
+// In your index.html file:
+window.addEventListener('load', function() {
     const templateUrl = localStorage.getItem('selectedTemplateUrl');
     
     if (templateUrl) {
-        console.log("Loading template from:", templateUrl);
+        const overlay = document.getElementById('overlay');
         
-        // Create test image first
+        // Pre-load to verify
         const tester = new Image();
-        tester.src = templateUrl;
-        
-        tester.onload = () => {
+        tester.onload = function() {
             overlay.src = templateUrl;
             overlay.style.display = 'block';
-            console.log("Template loaded successfully");
+            localStorage.removeItem('selectedTemplateUrl');
         };
-        
-        tester.onerror = () => {
-            console.error("Failed to load:", templateUrl);
-            alert("Template failed to load. Check console for details.");
+        tester.onerror = function() {
+            console.error("Failed to load template:", templateUrl);
+            alert("Template failed to load. Please try again.");
         };
-        
-        localStorage.removeItem('selectedTemplateUrl');
+        tester.src = templateUrl;
     }
 });
