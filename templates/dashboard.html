@@ -24,7 +24,7 @@
         }
         
         .welcome h1 {
-            font-size: 5rem; /* Much larger heading */
+            font-size: 5rem;
             margin: 0 0 15px 0;
             text-shadow: 0 2px 8px rgba(0,0,0,0.3);
             font-weight: 700;
@@ -39,12 +39,11 @@
         }
         
         .dashboard {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 30px;
+            display: flex;
+            justify-content: center;
             width: 90%;
-            max-width: 1000px;
-            margin-bottom: 40px; /* Balance space at bottom */
+            max-width: 500px; /* Adjusted for single card */
+            margin-bottom: 40px;
         }
         
         .card {
@@ -58,15 +57,12 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            width: 100%;
         }
         
         .card:hover {
             transform: translateY(-8px);
             box-shadow: 0 15px 30px rgba(0,0,0,0.2);
-        }
-        
-        .card-wide {
-            grid-column: span 2;
         }
         
         h2 {
@@ -93,7 +89,7 @@
             font-weight: 600;
             font-size: 1.1rem;
             transition: all 0.3s;
-            margin-top: auto; /* Pushes button to bottom */
+            margin-top: auto;
             width: fit-content;
         }
         
@@ -110,25 +106,11 @@
     </div>
     
     <div class="dashboard">
-        <!-- Card 1 - Direct to AR -->
+        <!-- Only Card 1 remains -->
         <div class="card" onclick="window.location.href='/ar'">
             <h2>📤 Upload Image & Draw</h2>
             <p>Upload your own architecture plans to trace and annotate in augmented reality</p>
             <button>Start Tracing</button>
-        </div>
-
-        <!-- Card 2 - Template Gallery -->
-        <div class="card" onclick="window.location.href='/templates'">
-            <h2>🏛️ Architecture Templates</h2>
-            <p>Browse our collection of professional templates to practice your skills</p>
-            <button>Choose Template</button>
-        </div>
-
-        <!-- Card 3 - Text to AR (Full width) -->
-        <div class="card card-wide" onclick="window.location.href='/text-art'">
-            <h2>✍️ Text to AR Design</h2>
-            <p>Generate custom traceable designs instantly using AI-powered text prompts</p>
-            <button>Generate Design</button>
         </div>
     </div>
 </body>
