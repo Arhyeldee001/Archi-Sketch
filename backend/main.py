@@ -6,7 +6,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from .template_handler import router as template_router  # Note the dot prefix
+from backend.template_handler import router as template_router
 
 from backend.db import SessionLocal, init_db
 from backend.models import User
