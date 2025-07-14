@@ -9,7 +9,7 @@ templates = Jinja2Templates(directory="templates")
 UPLOAD_DIR = "static/templates"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-@router.get("/admin", response_class=HTMLResponse)
+@router.get("/template-admin", response_class=HTMLResponse)
 async def admin(request: Request):
     templates_list = os.listdir(UPLOAD_DIR)
     return templates.TemplateResponse("template_admin.html", {
@@ -17,7 +17,7 @@ async def admin(request: Request):
         "templates": templates_list
     })
 
-@router.post("/upload")
+@router.post("/template-upload")
 async def upload(files: list[UploadFile] = File(...)):
     for file in files:
         file_path = os.path.join(UPLOAD_DIR, file.filename)
