@@ -12,7 +12,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 @router.get("/admin", response_class=HTMLResponse)
 async def admin(request: Request):
     templates_list = os.listdir(UPLOAD_DIR)
-    return templates.TemplateResponse("admin.html", {
+    return templates.TemplateResponse("template_admin.html", {
         "request": request,
         "templates": templates_list
     })
