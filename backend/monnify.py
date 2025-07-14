@@ -1,44 +1,46 @@
-import requests
+import os
 import base64
-from datetime import datetime, timedelta
-from fastapi import APIRouter
+import requests
+from datetime import datetime
+from fastapi import APIRouter, Request
+from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
-MONNIFY_API_KEY = "MK_TEST_TFD7XNBYF2"
-MONNIFY_SECRET_KEY = "R1WZ04VD1PQ9ZW14R3FKF4QLVSJTJZTH"
-CONTRACT_CODE = "4527853034"
-BASE_URL = "https://api.monnify.com"
-
-def get_auth_header():
-    auth_str = f"{MONNIFY_API_KEY}:{MONNIFY_SECRET_KEY}"
-    encoded = base64.b64encode(auth_str.encode()).decode()
-    return {"Authorization": f"Basic {encoded}"}
-
 @router.post("/initiate-payment")
-async def initiate_payment():
+async def initiate_payment(request: Request):
+    # Get email from frontend
+    data = await request.json()
+    email = data.get("email")
+    
+    if not email:
+        return JSONResponse({"error": "Email required"}, status_code=400)
+    
     # Generate unique reference
     transaction_ref = f"ARTRACER-{datetime.now().strftime('%Y%m%d%H%M%S')}"
     
     # Create payment request
     payload = {
-        "amount": 5000,  # ₦5000 Naira (adjust as needed)
+        "amount": 5000,
         "customerName": "AR Tracer User",
-        "customerEmail": "user@example.com",
+        "customerEmail": email,
         "paymentReference": transaction_ref,
         "paymentDescription": "1-month AR Tracer Subscription",
         "currencyCode": "NGN",
-        "contractCode": CONTRACT_CODE,
-        "redirectUrl": "https://yourdomain.com/payment-success",
+        "contractCode": os.getenv("CONTRACT_CODE"),
+        "redirectUrl": f"{os.getenv('BASE_URL')}/payment-success?email={email}",
         "paymentMethods": ["CARD", "ACCOUNT_TRANSFER"]
     }
     
+    auth_str = f"{os.getenv('MONNIFY_API_KEY')}:{os.getenv('MONNIFY_SECRET_KEY')}"
+    encoded = base64.b64encode(auth_str.encode()).decode()
+    
     response = requests.post(
-        f"{BASE_URL}/api/v1/merchant/transactions/init-transaction",
+        "https://api.monnify.com/api/v1/merchant/transactions/init-transaction",
         json=payload,
-        headers=get_auth_header()
+        headers={"Authorization": f"Basic {encoded}"}
     )
     
     if response.status_code == 200:
-        return response.json()  # Contains payment URL
-    return {"error": "Payment initiation failed"}
+        return response.json()
+    return JSONResponse({"error": "Payment initiation failed"}, status_code=400)
