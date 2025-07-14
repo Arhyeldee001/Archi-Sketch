@@ -4,11 +4,14 @@ from fastapi.templating import Jinja2Templates
 import os
 
 router = APIRouter()
-templates = Jinja2Templates(directory="../templates")  # ← Critical path fix!
-UPLOAD_DIR = "../static/templates"
+
+# Use absolute path for Render compatibility
+current_dir = os.path.dirname(os.path.abspath(__file__))
+templates = Jinja2Templates(directory=os.path.join(current_dir, "../../templates"))
+UPLOAD_DIR = os.path.join(current_dir, "../../static/templates")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-@router.get("/upload")  # Changed from /admin
+@router.get("/upload")  # This will become /templates/upload
 async def upload_ui(request: Request):
     return templates.TemplateResponse("template_admin.html", {
         "request": request,
@@ -22,4 +25,4 @@ async def handle_upload(files: list[UploadFile] = File(...)):
             file_path = os.path.join(UPLOAD_DIR, file.filename)
             with open(file_path, "wb") as f:
                 f.write(await file.read())
-    return RedirectResponse(url="/upload", status_code=303)
+    return RedirectResponse(url="/templates/upload", status_code=303)
