@@ -1,32 +1,37 @@
 import os
-from fastapi import FastAPI, Depends, HTTPException, Request, Response
+import base64
+import requests
+import json
+from datetime import datetime, timedelta
+from fastapi import FastAPI, Depends, HTTPException, Request, Response, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from backend.template_handler import router as template_router
-
 from backend.db import SessionLocal, init_db
 from backend.models import User
 from backend.utils import hash_password
 from backend.auth import register_user, login_user
 from backend import models
-from backend.routes import admin  # Admin route import
-import json  # Add at top of file
+from backend.routes import admin
+from backend.monnify import router as monnify_router  # Import Monnify router
 
 # Init FastAPI app
 app = FastAPI()
 
-# ↓ Add these 2 lines right after app creation ↓
-app.mount("/static", StaticFiles(directory="../static"), name="static")  # Adjusted path
-app.include_router(template_router)  # Remove prefix completely
+# Mount static files and include routers
+app.mount("/static", StaticFiles(directory="../static"), name="static")
+app.include_router(template_router)
+app.include_router(monnify_router)  # Add Monnify router
+app.include_router(admin.router)  # Admin routes
 
 # Templates
 templates = Jinja2Templates(directory="templates")
 
-# CORS (open access for now)
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -46,29 +51,117 @@ def get_db():
     finally:
         db.close()
 
-# Auth payload model
+# Models
 class AuthData(BaseModel):
     email: str
     password: str
 
-# User registration model
 class UserRegistration(BaseModel):
     fullname: str
     phone: str
     email: str
     password: str
 
-# API Endpoints
+class SubscriptionData(BaseModel):
+    email: str
+    expiry_date: str
+
+# Subscription storage file path
+SUBSCRIPTIONS_FILE = "subscriptions.txt"
+
+# ===== MONNIFY PAYMENT INTEGRATION ===== #
+@app.middleware("http")
+async def check_subscription(request: Request, call_next):
+    # Skip auth/payment endpoints
+    if request.url.path in ["/", "/onboarding", "/login", "/api/register", "/api/login", 
+                          "/initiate-payment", "/payment-success", "/static"]:
+        return await call_next(request)
+    
+    # Check for premium routes (like /ar)
+    if request.url.path.startswith("/ar"):
+        # Get user email from cookies
+        email = request.cookies.get("user_email")
+        
+        if not email:
+            return RedirectResponse(url="/onboarding?payment_required=true")
+        
+        # Check subscription
+        try:
+            with open(SUBSCRIPTIONS_FILE, "r") as f:
+                for line in f:
+                    if email in line:
+                        parts = line.strip().split(',')
+                        if len(parts) == 2:
+                            expiry = datetime.fromisoformat(parts[1])
+                            if expiry > datetime.now():
+                                return await call_next(request)
+        except FileNotFoundError:
+            pass
+        
+        return RedirectResponse(url="/onboarding?payment_required=true")
+    
+    return await call_next(request)
+
+@app.get("/payment-success")
+async def payment_success(
+    request: Request,
+    transaction_ref: str = Query(...),
+    email: str = Query(...),
+    db: Session = Depends(get_db)
+):
+    # Verify transaction with Monnify
+    try:
+        auth_str = f"{os.getenv('MONNIFY_API_KEY')}:{os.getenv('MONNIFY_SECRET_KEY')}"
+        encoded = base64.b64encode(auth_str.encode()).decode()
+        headers = {"Authorization": f"Basic {encoded}"}
+        
+        response = requests.get(
+            f"https://api.monnify.com/api/v2/transactions/{transaction_ref}",
+            headers=headers
+        )
+        
+        if response.status_code == 200:
+            transaction_data = response.json()
+            if transaction_data['responseBody']['paymentStatus'] == "PAID":
+                # Calculate expiry (1 month from now)
+                expiry_date = datetime.now() + timedelta(days=30)
+                expiry_str = expiry_date.isoformat()
+                
+                # Store subscription
+                with open(SUBSCRIPTIONS_FILE, "a") as f:
+                    f.write(f"{email},{expiry_str}\n")
+                
+                # Update user in database
+                user = db.query(User).filter(User.email == email).first()
+                if user:
+                    user.has_subscription = True
+                    db.commit()
+                
+                # Set cookies
+                response = RedirectResponse(url="/ar?payment=success")
+                response.set_cookie(
+                    key="user_email",
+                    value=email,
+                    max_age=30*24*60*60,  # 30 days
+                    httponly=True
+                )
+                return response
+    
+    except Exception as e:
+        print(f"Payment verification error: {e}")
+    
+    return RedirectResponse(url="/onboarding?payment=failed")
+
+# ===== EXISTING ENDPOINTS ===== #
 @app.post("/api/register")
 def register(user_data: UserRegistration, db: Session = Depends(get_db)):
     hashed_password = hash_password(user_data.password)
-
     user = User(
         fullname=user_data.fullname,
         phone=user_data.phone,
         email=user_data.email,
         hashed_password=hashed_password,
-        is_first_login=True  # Mark as first-time user
+        is_first_login=True
     )
     db.add(user)
     db.commit()
@@ -81,13 +174,9 @@ def register(user_data: UserRegistration, db: Session = Depends(get_db)):
 
 @app.post("/api/login")
 def login(payload: AuthData, db: Session = Depends(get_db)):
-    email = payload.email
-    password = payload.password
-    user = login_user(db, email, password)
+    user = login_user(db, payload.email, payload.password)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    print(f"LOGIN 🚨 User {user.id} first login: {user.is_first_login}")
     
     if user.is_first_login:
         return {
@@ -98,125 +187,69 @@ def login(payload: AuthData, db: Session = Depends(get_db)):
     return {
         "message": "Login successful",
         "user_id": user.id,
-        "redirect_to": "/dashboard"
+        "redirect_to": "/ar"
     }
-
 
 @app.post("/complete-onboarding")
 async def complete_onboarding(request: Request, response: Response, db: Session = Depends(get_db)):
     try:
-        # Add error handling for JSON parsing
         data = await request.json()
         user_id = data.get("user_id")
         
         if not user_id:
-            print("⚠️ No user_id received in request")
             return {"status": "error", "message": "user_id required"}
             
-        # Update user status
         db.query(User).filter(User.id == user_id).update({"is_first_login": False})
         db.commit()
         
-        # Set cookies
-        session_token = f"session_{user_id}"  # Simple token for testing
         response.set_cookie(
             key="session_token",
-            value=session_token,
+            value=f"session_{user_id}",
             max_age=31536000,
             httponly=True,
-            secure=False,  # Disable for local testing
+            secure=False,
             samesite='lax'
         )
-        response.set_cookie(
-            key="onboarding_complete",
-            value="true",
-            max_age=31536000,
-            httponly=True,
-            secure=False,  # Disable for local testing
-            samesite='lax'
-        )
-        
-        print(f"✅ Onboarding completed for user {user_id}")
-        return {"status": "success", "session_token": session_token}
+        return {"status": "success"}
         
     except json.JSONDecodeError:
-        print("❌ Invalid JSON received")
         return {"status": "error", "message": "Invalid JSON"}
     except Exception as e:
-        print(f"❌ Server error: {str(e)}")
         return {"status": "error", "message": "Server error"}
-    
-# Static Files
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-static_dir = os.path.join(BASE_DIR, "static")
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
-
-# Include admin router
-app.include_router(admin.router)
 
 # Frontend Routes
 @app.get("/")
 def root(request: Request, db: Session = Depends(get_db)):
-    # First check session token cookie
     if request.cookies.get("session_token"):
-        return RedirectResponse(url="/login")
-    
-    # Then check user_id cookie (your existing check)
-    user_id = request.cookies.get("user_id")
-    if user_id:
-        user = db.query(User).filter(User.id == user_id).first()
-        if user and not user.is_first_login:
-            return RedirectResponse(url="/ar")
-    
-    # Fallback to onboarding
+        return RedirectResponse(url="/ar")
     return RedirectResponse(url="/onboarding")
 
 @app.get("/onboarding", response_class=HTMLResponse)
 def show_onboarding(request: Request, db: Session = Depends(get_db)):
     user_id = request.query_params.get("user_id")
+    payment_required = request.query_params.get("payment_required")
     
-    if user_id:  # Coming from registration/login
-        user = db.query(User).filter(User.id == user_id).first()
-        if not user:
-            return RedirectResponse(url="/login")
-        
-        print(f"ONBOARDING 🚨 User {user.id} first login status: {user.is_first_login}")
-        
-        if not user.is_first_login:
-            return RedirectResponse(url="/ar")
-        
-        return templates.TemplateResponse("onboarding.html", {
-            "request": request,
-            "user_id": user_id
-        })
-    
-    # Coming from root as new visitor
-    return templates.TemplateResponse("onboarding.html", {
+    context = {
         "request": request,
-        "user_id": None  # No user associated yet
-    })
+        "user_id": user_id,
+        "payment_required": payment_required == "true"
+    }
+    return templates.TemplateResponse("onboarding.html", context)
 
 @app.get("/login", response_class=HTMLResponse)
 def serve_login():
-    login_path = os.path.join(BASE_DIR, "templates", "login.html")
-    with open(login_path, "r", encoding="utf-8") as f:
-        return f.read()
+    return FileResponse("templates/login.html")
 
 @app.get("/ar", response_class=HTMLResponse)
 def serve_ar(request: Request):
     template_id = request.query_params.get("template")
+    payment_status = request.query_params.get("payment")
     
-    # Read your existing index.html
-    index_path = os.path.join(BASE_DIR, "index.html")
-    with open(index_path, "r", encoding="utf-8") as f:
+    with open("index.html", "r", encoding="utf-8") as f:
         content = f.read()
     
-    # Inject template ID into the page (optional)
     if template_id:
-        content = content.replace(
-            '<body>', 
-            f'<body data-template="{template_id}">'
-        )
+        content = content.replace('<body>', f'<body data-template="{template_id}">')
     
     return HTMLResponse(content)
 
@@ -224,15 +257,6 @@ def serve_ar(request: Request):
 def show_admin_dashboard(request: Request):
     return templates.TemplateResponse("admin_users.html", {"request": request})
 
-# Onboarding image endpoint
-@app.get("/onboarding-image")
-def get_onboarding_image():
-    return FileResponse("static/onboarding/onboarding1.jpg")
-
-@app.get("/dashboard", response_class=HTMLResponse)
-def dashboard(request: Request):
-    return templates.TemplateResponse("dashboard.html", {"request": request})
-# Add new route for templates
 @app.get("/templates", response_class=HTMLResponse)
 def template_gallery(request: Request):
     return templates.TemplateResponse("templates.html", {"request": request})
