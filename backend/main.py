@@ -21,7 +21,7 @@ app = FastAPI()
 
 # ↓ Add these 2 lines right after app creation ↓
 app.mount("/static", StaticFiles(directory="../static"), name="static")  # Adjusted path
-app.include_router(template_router, prefix="/templates")
+app.include_router(template_router)  # Remove prefix completely
 
 # Templates
 templates = Jinja2Templates(directory="templates")
