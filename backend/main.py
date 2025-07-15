@@ -23,7 +23,6 @@ app = FastAPI()
 
 # Mount static files and include routers
 app.mount("/static", StaticFiles(directory="../static"), name="static")
-app.include_router(template_router)
 app.include_router(monnify_router)  # Add Monnify router
 app.include_router(admin.router)  # Admin routes
 
