@@ -7,7 +7,9 @@ from fastapi import FastAPI, Depends, HTTPException, Request, Response, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
+from pathlib import Path
 from pydantic import BaseModel
 from backend.db import SessionLocal, init_db
 from backend.models import User
@@ -24,6 +26,8 @@ app = FastAPI()
 
 app.include_router(monnify_router)  # Add Monnify router
 app.include_router(admin.router)  # Admin routes
+static_path = Path(__file__).parent.parent / "static"
+app.mount("/static", StaticFiles(directory=static_path), name="static")
 
 # Templates
 templates = Jinja2Templates(directory="templates")
