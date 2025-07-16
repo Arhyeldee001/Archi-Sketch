@@ -35,7 +35,7 @@ templates = Jinja2Templates(directory="templates")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=True,  # Critical for cookies
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -71,78 +71,55 @@ SUBSCRIPTIONS_FILE = "subscriptions.txt"
 
 # ===== Middleware ===== #
 @app.middleware("http")
-async def check_subscription(request: Request, call_next):
-    if request.url.path in ["/", "/onboarding", "/login", "/dashboard.html", "/api/register", "/api/login", "/initiate-payment", "/payment-success", "/static"]:
+async def auth_middleware(request: Request, call_next):
+    # Skip auth for these paths
+    if request.url.path in ["/", "/login", "/api/login", "/api/register", "/static", "/onboarding"]:
         return await call_next(request)
     
-    if request.url.path.startswith("/ar"):
-        email = request.cookies.get("user_email")
-        if not email:
-            return RedirectResponse(url="/onboarding?payment_required=true")
-        
-        try:
-            with open(SUBSCRIPTIONS_FILE, "r") as f:
-                for line in f:
-                    if email in line:
-                        parts = line.strip().split(',')
-                        if len(parts) == 2:
-                            expiry = datetime.fromisoformat(parts[1])
-                            if expiry > datetime.now():
-                                return await call_next(request)
-        except FileNotFoundError:
-            pass
-        
-        return RedirectResponse(url="/onboarding?payment_required=true")
+    # Check session cookie
+    session_token = request.cookies.get("session_token")
+    if not session_token:
+        return RedirectResponse(url="/login")
+    
+    # Verify token format
+    if not session_token.startswith("session_"):
+        response = RedirectResponse(url="/login")
+        response.delete_cookie("session_token")
+        return response
     
     return await call_next(request)
 
-# ===== Payment Endpoint ===== #
-@app.get("/payment-success")
-async def payment_success(
-    request: Request,
-    transaction_ref: str = Query(...),
-    email: str = Query(...),
-    db: Session = Depends(get_db)
-):
-    try:
-        auth_str = f"{os.getenv('MONNIFY_API_KEY')}:{os.getenv('MONNIFY_SECRET_KEY')}"
-        encoded = base64.b64encode(auth_str.encode()).decode()
-        headers = {"Authorization": f"Basic {encoded}"}
-        
-        response = requests.get(
-            f"https://api.monnify.com/api/v2/transactions/{transaction_ref}",
-            headers=headers
-        )
-        
-        if response.status_code == 200:
-            transaction_data = response.json()
-            if transaction_data['responseBody']['paymentStatus'] == "PAID":
-                expiry_date = datetime.now() + timedelta(days=30)
-                expiry_str = expiry_date.isoformat()
-                
-                with open(SUBSCRIPTIONS_FILE, "a") as f:
-                    f.write(f"{email},{expiry_str}\n")
-                
-                user = db.query(User).filter(User.email == email).first()
-                if user:
-                    user.has_subscription = True
-                    db.commit()
-                
-                response = RedirectResponse(url="/dashboard.html?payment=success")
-                response.set_cookie(
-                    key="user_email",
-                    value=email,
-                    max_age=30*24*60*60,
-                    httponly=True
-                )
-                return response
-    
-    except Exception as e:
-        print(f"Payment verification error: {e}")
-    
-    return RedirectResponse(url="/onboarding?payment=failed")
-
 # ===== Auth Endpoints ===== #
+@app.post("/api/login")
+def login(response: Response, payload: AuthData, db: Session = Depends(get_db)):
+    user = login_user(db, payload.email, payload.password)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Create redirect response
+    if user.is_first_login:
+        redirect_url = f"/onboarding?user_id={user.id}"
+    else:
+        redirect_url = "/dashboard.html"
+    
+    # Set cookies in response
+    response = JSONResponse({
+        "message": "Login successful",
+        "redirect_to": redirect_url
+    })
+    
+    response.set_cookie(
+        key="session_token",
+        value=f"session_{user.id}",
+        max_age=31536000,  # 1 year
+        httponly=True,
+        secure=False,  # Set True in production with HTTPS
+        samesite='lax',
+        path='/'
+    )
+    
+    return response
+
 @app.post("/api/register")
 def register(user_data: UserRegistration, db: Session = Depends(get_db)):
     hashed_password = hash_password(user_data.password)
@@ -155,128 +132,74 @@ def register(user_data: UserRegistration, db: Session = Depends(get_db)):
     )
     db.add(user)
     db.commit()
-    db.refresh(user)
     return {
         "message": "User registered successfully",
-        "user_id": user.id,
         "redirect_to": f"/onboarding?user_id={user.id}"
     }
 
-@app.post("/api/login")
-def login(payload: AuthData, db: Session = Depends(get_db)):
-    user = login_user(db, payload.email, payload.password)
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    if user.is_first_login:
-        return {
-            "message": "Login successful - redirect to onboarding",
-            "user_id": user.id,
-            "redirect_to": f"/onboarding?user_id={user.id}"
-        }
-    return {
-        "message": "Login successful",
-        "user_id": user.id,
-        "redirect_to": "/dashboard.html"  # Changed to dashboard
-    }
-
 @app.post("/complete-onboarding")
-async def complete_onboarding(request: Request, response: Response, db: Session = Depends(get_db)):
+async def complete_onboarding(request: Request, db: Session = Depends(get_db)):
     try:
         data = await request.json()
         user_id = data.get("user_id")
         
         if not user_id:
-            return {"status": "error", "message": "user_id required"}
+            raise HTTPException(status_code=400, detail="user_id required")
             
         db.query(User).filter(User.id == user_id).update({"is_first_login": False})
         db.commit()
         
-        response = RedirectResponse(url="/dashboard.html")  # Redirect to dashboard
+        response = RedirectResponse(url="/dashboard.html", status_code=303)
         response.set_cookie(
             key="session_token",
             value=f"session_{user_id}",
             max_age=31536000,
             httponly=True,
             secure=False,
-            samesite='lax'
+            samesite='lax',
+            path='/'
         )
         return response
         
     except json.JSONDecodeError:
-        return {"status": "error", "message": "Invalid JSON"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+        raise HTTPException(status_code=400, detail="Invalid JSON")
 
 # ===== Frontend Routes ===== #
 @app.get("/")
-def root(request: Request, db: Session = Depends(get_db)):
+def root(request: Request):
     if request.cookies.get("session_token"):
-        return RedirectResponse(url="/dashboard.html")  # Changed to dashboard
+        return RedirectResponse(url="/dashboard.html")
     return RedirectResponse(url="/onboarding")
 
 @app.get("/dashboard.html", response_class=HTMLResponse)
-def serve_dashboard(request: Request, db: Session = Depends(get_db)):
-    if not request.cookies.get("session_token"):
-        return RedirectResponse(url="/login")
+def dashboard(request: Request):
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
-@app.get("/onboarding", response_class=HTMLResponse)
-def show_onboarding(request: Request, db: Session = Depends(get_db)):
-    user_id = request.query_params.get("user_id")
-    payment_required = request.query_params.get("payment_required")
-    
-    context = {
-        "request": request,
-        "user_id": user_id,
-        "payment_required": payment_required == "true"
-    }
-    return templates.TemplateResponse("onboarding.html", context)
-
 @app.get("/login", response_class=HTMLResponse)
-def serve_login():
+def login_page():
     return FileResponse("templates/login.html")
 
+@app.get("/onboarding", response_class=HTMLResponse)
+def onboarding(request: Request):
+    user_id = request.query_params.get("user_id")
+    return templates.TemplateResponse("onboarding.html", {
+        "request": request,
+        "user_id": user_id
+    })
+
+# ===== Other Routes ===== #
 @app.get("/ar", response_class=HTMLResponse)
-def serve_ar(request: Request):
+def ar_viewer(request: Request):
     if not request.cookies.get("session_token"):
         return RedirectResponse(url="/login")
-    
-    template_id = request.query_params.get("template")
-    payment_status = request.query_params.get("payment")
-    
-    with open("index.html", "r", encoding="utf-8") as f:
-        content = f.read()
-    
-    if template_id:
-        content = content.replace('<body>', f'<body data-template="{template_id}">')
-    
-    return HTMLResponse(content)
+    return FileResponse("index.html")
 
 @app.post("/api/logout")
-def logout(response: Response):
+def logout():
     response = RedirectResponse(url="/login")
     response.delete_cookie("session_token")
-    response.delete_cookie("user_email")
     return response
-
-@app.get("/admin", response_class=HTMLResponse)
-def show_admin_dashboard(request: Request):
-    if not request.cookies.get("session_token"):
-        return RedirectResponse(url="/login")
-    return templates.TemplateResponse("admin_users.html", {"request": request})
-
-@app.get("/templates", response_class=HTMLResponse)
-def template_gallery(request: Request):
-    if not request.cookies.get("session_token"):
-        return RedirectResponse(url="/login")
-    return templates.TemplateResponse("templates.html", {"request": request})
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "backend.main:app",
-        host="0.0.0.0",
-        port=int(os.getenv("PORT", 8000)),
-        reload=True
-    )
+    uvicorn.run(app, host="0.0.0.0", port=8000)
