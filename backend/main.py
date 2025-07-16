@@ -253,6 +253,13 @@ def serve_ar(request: Request):
     
     return HTMLResponse(content)
 
+@app.post("/api/logout")
+def logout(response: Response):
+    response = RedirectResponse(url="/login")
+    response.delete_cookie("session_token")
+    response.delete_cookie("user_email")
+    return response
+
 @app.get("/admin", response_class=HTMLResponse)
 def show_admin_dashboard(request: Request):
     if not request.cookies.get("session_token"):
