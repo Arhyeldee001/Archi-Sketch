@@ -17,15 +17,14 @@ from backend.utils import hash_password
 from backend.auth import register_user, login_user
 from backend import models
 from backend.routes import admin
-from backend.monnify import router as monnify_router  # Import Monnify router
+from backend.monnify import router as monnify_router
 
 # Init FastAPI app
 app = FastAPI()
 
 # Mount static files and include routers
-
-app.include_router(monnify_router)  # Add Monnify router
-app.include_router(admin.router)  # Admin routes
+app.include_router(monnify_router)
+app.include_router(admin.router)
 static_path = Path(__file__).parent.parent / "static"
 app.mount("/static", StaticFiles(directory=static_path), name="static")
 
@@ -70,23 +69,17 @@ class SubscriptionData(BaseModel):
 # Subscription storage file path
 SUBSCRIPTIONS_FILE = "subscriptions.txt"
 
-# ===== MONNIFY PAYMENT INTEGRATION ===== #
+# ===== Middleware ===== #
 @app.middleware("http")
 async def check_subscription(request: Request, call_next):
-    # Skip auth/payment endpoints
-    if request.url.path in ["/", "/onboarding", "/login", "/api/register", "/api/login", 
-                          "/initiate-payment", "/payment-success", "/static"]:
+    if request.url.path in ["/", "/onboarding", "/login", "/dashboard.html", "/api/register", "/api/login", "/initiate-payment", "/payment-success", "/static"]:
         return await call_next(request)
     
-    # Check for premium routes (like /ar)
     if request.url.path.startswith("/ar"):
-        # Get user email from cookies
         email = request.cookies.get("user_email")
-        
         if not email:
             return RedirectResponse(url="/onboarding?payment_required=true")
         
-        # Check subscription
         try:
             with open(SUBSCRIPTIONS_FILE, "r") as f:
                 for line in f:
@@ -103,6 +96,7 @@ async def check_subscription(request: Request, call_next):
     
     return await call_next(request)
 
+# ===== Payment Endpoint ===== #
 @app.get("/payment-success")
 async def payment_success(
     request: Request,
@@ -110,7 +104,6 @@ async def payment_success(
     email: str = Query(...),
     db: Session = Depends(get_db)
 ):
-    # Verify transaction with Monnify
     try:
         auth_str = f"{os.getenv('MONNIFY_API_KEY')}:{os.getenv('MONNIFY_SECRET_KEY')}"
         encoded = base64.b64encode(auth_str.encode()).decode()
@@ -124,26 +117,22 @@ async def payment_success(
         if response.status_code == 200:
             transaction_data = response.json()
             if transaction_data['responseBody']['paymentStatus'] == "PAID":
-                # Calculate expiry (1 month from now)
                 expiry_date = datetime.now() + timedelta(days=30)
                 expiry_str = expiry_date.isoformat()
                 
-                # Store subscription
                 with open(SUBSCRIPTIONS_FILE, "a") as f:
                     f.write(f"{email},{expiry_str}\n")
                 
-                # Update user in database
                 user = db.query(User).filter(User.email == email).first()
                 if user:
                     user.has_subscription = True
                     db.commit()
                 
-                # Set cookies
-                response = RedirectResponse(url="/ar?payment=success")
+                response = RedirectResponse(url="/dashboard.html?payment=success")
                 response.set_cookie(
                     key="user_email",
                     value=email,
-                    max_age=30*24*60*60,  # 30 days
+                    max_age=30*24*60*60,
                     httponly=True
                 )
                 return response
@@ -153,7 +142,7 @@ async def payment_success(
     
     return RedirectResponse(url="/onboarding?payment=failed")
 
-# ===== EXISTING ENDPOINTS ===== #
+# ===== Auth Endpoints ===== #
 @app.post("/api/register")
 def register(user_data: UserRegistration, db: Session = Depends(get_db)):
     hashed_password = hash_password(user_data.password)
@@ -188,7 +177,7 @@ def login(payload: AuthData, db: Session = Depends(get_db)):
     return {
         "message": "Login successful",
         "user_id": user.id,
-        "redirect_to": "/ar"
+        "redirect_to": "/dashboard.html"  # Changed to dashboard
     }
 
 @app.post("/complete-onboarding")
@@ -203,6 +192,7 @@ async def complete_onboarding(request: Request, response: Response, db: Session 
         db.query(User).filter(User.id == user_id).update({"is_first_login": False})
         db.commit()
         
+        response = RedirectResponse(url="/dashboard.html")  # Redirect to dashboard
         response.set_cookie(
             key="session_token",
             value=f"session_{user_id}",
@@ -211,19 +201,25 @@ async def complete_onboarding(request: Request, response: Response, db: Session 
             secure=False,
             samesite='lax'
         )
-        return {"status": "success"}
+        return response
         
     except json.JSONDecodeError:
         return {"status": "error", "message": "Invalid JSON"}
     except Exception as e:
-        return {"status": "error", "message": "Server error"}
+        return {"status": "error", "message": str(e)}
 
-# Frontend Routes
+# ===== Frontend Routes ===== #
 @app.get("/")
 def root(request: Request, db: Session = Depends(get_db)):
     if request.cookies.get("session_token"):
-        return RedirectResponse(url="/ar")
+        return RedirectResponse(url="/dashboard.html")  # Changed to dashboard
     return RedirectResponse(url="/onboarding")
+
+@app.get("/dashboard.html", response_class=HTMLResponse)
+def serve_dashboard(request: Request, db: Session = Depends(get_db)):
+    if not request.cookies.get("session_token"):
+        return RedirectResponse(url="/login")
+    return templates.TemplateResponse("dashboard.html", {"request": request})
 
 @app.get("/onboarding", response_class=HTMLResponse)
 def show_onboarding(request: Request, db: Session = Depends(get_db)):
@@ -243,6 +239,9 @@ def serve_login():
 
 @app.get("/ar", response_class=HTMLResponse)
 def serve_ar(request: Request):
+    if not request.cookies.get("session_token"):
+        return RedirectResponse(url="/login")
+    
     template_id = request.query_params.get("template")
     payment_status = request.query_params.get("payment")
     
@@ -256,10 +255,14 @@ def serve_ar(request: Request):
 
 @app.get("/admin", response_class=HTMLResponse)
 def show_admin_dashboard(request: Request):
+    if not request.cookies.get("session_token"):
+        return RedirectResponse(url="/login")
     return templates.TemplateResponse("admin_users.html", {"request": request})
 
 @app.get("/templates", response_class=HTMLResponse)
 def template_gallery(request: Request):
+    if not request.cookies.get("session_token"):
+        return RedirectResponse(url="/login")
     return templates.TemplateResponse("templates.html", {"request": request})
 
 if __name__ == "__main__":
