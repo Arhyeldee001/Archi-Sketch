@@ -138,18 +138,26 @@
                 const res = await fetch("/api/login", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(data),
+                    credentials: "include"  // CRITICAL FOR COOKIES
                 });
                 
                 const result = await res.json();
-                message.textContent = res.ok
-                    ? "✅ " + result.message
-                    : "❌ " + (result.detail || "Login failed");
+                
+                if (!res.ok) {
+                    message.textContent = "❌ " + (result.detail || "Login failed");
+                    return;
+                }
 
-                if (res.ok) {
-                    console.log("Login response:", result);  // Debug log
-                    // Use the backend's redirect_to instead of hardcoding /ar
-                    window.location.href = result.redirect_to || "/ar";
+                message.textContent = "✅ " + result.message;
+                console.log("Login response:", result);  // Debug log
+                
+                // Use the backend's redirect_to instead of hardcoding
+                if (result.redirect_to) {
+                    window.location.href = result.redirect_to;
+                } else {
+                    console.error("No redirect_to in response");
+                    window.location.href = "/dashboard.html";  // Fallback
                 }
             } catch (error) {
                 console.error("Login error:", error);
@@ -170,18 +178,25 @@
                 const res = await fetch("/api/register", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(user)
+                    body: JSON.stringify(user),
+                    credentials: "include"  // For consistency
                 });
                 
                 const result = await res.json();
-                message.textContent = res.ok
-                    ? "✅ " + result.message
-                    : "❌ " + (result.detail || "Registration failed");
+                
+                if (!res.ok) {
+                    message.textContent = "❌ " + (result.detail || "Registration failed");
+                    return;
+                }
 
-                if (res.ok) {
-                    console.log("Registration response:", result);  // Debug log
-                    // Redirect to onboarding for new users
-                    window.location.href = result.redirect_to || "/login";
+                message.textContent = "✅ " + result.message;
+                console.log("Registration response:", result);  // Debug log
+                
+                // Redirect to onboarding for new users
+                if (result.redirect_to) {
+                    window.location.href = result.redirect_to;
+                } else {
+                    window.location.href = "/onboarding";  // Fallback
                 }
             } catch (error) {
                 console.error("Registration error:", error);
