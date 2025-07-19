@@ -25,16 +25,21 @@ app = FastAPI()
 # Mount static files and include routers
 app.include_router(monnify_router)
 app.include_router(admin.router)
-static_path = Path(__file__).parent.parent / "static"
-app.mount("/static", StaticFiles(directory=static_path), name="static")
+
+# IMPORTANT: Render.com specific static files setup
+static_dir = Path(__file__).parent.parent / "static"
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Templates
 templates = Jinja2Templates(directory="templates")
 
-# CORS
+# CORS - Updated for production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://archisketch.onrender.com",
+        "http://archisketch.onrender.com"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -72,13 +77,22 @@ SUBSCRIPTIONS_FILE = "subscriptions.txt"
 # ===== Middleware ===== #
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
-    if request.url.path in ["/", "/login", "/api/login", "/api/register", "/static", "/onboarding", "/onboarding/images"]:
+    # Skip auth for these paths
+    public_paths = [
+        "/", "/login", "/api/login", "/api/register", 
+        "/static", "/onboarding", "/onboarding/images",
+        "/complete-onboarding"
+    ]
+    
+    if request.url.path in public_paths or request.url.path.startswith("/static"):
         return await call_next(request)
     
+    # Check session cookie
     session_token = request.cookies.get("session_token")
     if not session_token:
         return RedirectResponse(url="/login")
     
+    # Verify token format
     if not session_token.startswith("session_"):
         response = RedirectResponse(url="/login")
         response.delete_cookie("session_token")
@@ -87,12 +101,32 @@ async def auth_middleware(request: Request, call_next):
     return await call_next(request)
 
 # ===== Image Serving ===== #
-@app.get("/onboarding/images/{image_name}")
-async def get_onboarding_image(image_name: str):
-    image_path = Path(__file__).parent.parent / "static" / "onboarding" / image_name
+@app.get("/static/onboarding/{image_name}")
+async def serve_onboarding_image(image_name: str):
+    """Serve onboarding images with proper caching headers"""
+    image_path = static_dir / "onboarding" / image_name
     if not image_path.exists():
         raise HTTPException(status_code=404, detail="Image not found")
-    return FileResponse(image_path)
+    
+    response = FileResponse(image_path)
+    response.headers["Cache-Control"] = "public, max-age=604800"  # 1 week cache
+    return response
+
+# Debug endpoint to verify static files
+@app.get("/debug-static")
+async def debug_static_files():
+    """Endpoint to verify static files are properly deployed"""
+    onboarding_path = static_dir / "onboarding"
+    files = []
+    
+    if onboarding_path.exists():
+        files = [f.name for f in onboarding_path.glob("*") if f.is_file()]
+    
+    return {
+        "static_dir": str(static_dir),
+        "onboarding_exists": onboarding_path.exists(),
+        "onboarding_files": files
+    }
 
 # ===== Auth Endpoints ===== #
 @app.post("/api/login")
@@ -101,22 +135,25 @@ def login(response: Response, payload: AuthData, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
+    # Create redirect response
     if user.is_first_login:
         redirect_url = f"/onboarding?user_id={user.id}"
     else:
         redirect_url = "/dashboard.html"
     
+    # Set cookies in response
     response = JSONResponse({
         "message": "Login successful",
-        "redirect_to": redirect_url
+        "redirect_to": redirect_url,
+        "user_id": str(user.id)
     })
     
     response.set_cookie(
         key="session_token",
         value=f"session_{user.id}",
-        max_age=31536000,
+        max_age=31536000,  # 1 year
         httponly=True,
-        secure=False,
+        secure=True,  # Must be True in production (HTTPS)
         samesite='lax',
         path='/'
     )
@@ -137,15 +174,16 @@ def register(user_data: UserRegistration, db: Session = Depends(get_db)):
     db.commit()
     return {
         "message": "User registered successfully",
-        "redirect_to": f"/onboarding?user_id={user.id}"
+        "redirect_to": f"/onboarding?user_id={user.id}",
+        "user_id": str(user.id)
     }
 
-# Update your complete-onboarding endpoint
 @app.post("/complete-onboarding")
 async def complete_onboarding(
     user_id: str = Form(...),
     db: Session = Depends(get_db)
 ):
+    """Endpoint to complete onboarding flow"""
     try:
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
@@ -160,7 +198,7 @@ async def complete_onboarding(
             value=f"session_{user_id}",
             max_age=31536000,
             httponly=True,
-            secure=False,
+            secure=True,  # Must be True in production
             samesite='lax',
             path='/'
         )
@@ -168,6 +206,7 @@ async def complete_onboarding(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 # ===== Frontend Routes ===== #
 @app.get("/")
 def root(request: Request):
@@ -177,29 +216,51 @@ def root(request: Request):
 
 @app.get("/dashboard.html", response_class=HTMLResponse)
 def dashboard(request: Request):
+    """Main dashboard route"""
+    if not request.cookies.get("session_token"):
+        return RedirectResponse(url="/login")
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
 @app.get("/login", response_class=HTMLResponse)
-def login_page():
-    return FileResponse("templates/login.html")
+def login_page(request: Request):
+    """Login page with onboarding success message"""
+    onboarding_success = request.query_params.get("onboarding") == "success"
+    return templates.TemplateResponse("login.html", {
+        "request": request,
+        "onboarding_success": onboarding_success
+    })
 
 @app.get("/onboarding", response_class=HTMLResponse)
 def onboarding(request: Request):
+    """Onboarding flow entry point"""
     user_id = request.query_params.get("user_id")
+    if not user_id:
+        return RedirectResponse(url="/login")
+    
     return templates.TemplateResponse("onboarding.html", {
         "request": request,
         "user_id": user_id
     })
 
-# ===== Other Routes ===== #
+# ===== AR Experience ===== #
 @app.get("/ar", response_class=HTMLResponse)
 def ar_viewer(request: Request):
+    """AR experience entry point"""
     if not request.cookies.get("session_token"):
         return RedirectResponse(url="/login")
     return FileResponse("index.html")
 
+# ===== Admin Routes ===== #
+@app.get("/admin", response_class=HTMLResponse)
+def admin_dashboard(request: Request):
+    if not request.cookies.get("session_token"):
+        return RedirectResponse(url="/login")
+    return templates.TemplateResponse("admin.html", {"request": request})
+
+# ===== Logout ===== #
 @app.post("/api/logout")
 def logout():
+    """Logout endpoint"""
     response = RedirectResponse(url="/login")
     response.delete_cookie("session_token")
     return response
