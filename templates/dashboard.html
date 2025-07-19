@@ -31,6 +31,7 @@
             padding: 2rem 1rem;
             width: 100%;
             max-width: 1200px;
+            margin-top: 2rem;
         }
         
         .header h1 {
@@ -50,26 +51,37 @@
         
         .dashboard-container {
             display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
             gap: 2rem;
             padding: 1rem;
             width: 100%;
             max-width: 1200px;
             margin-bottom: 3rem;
+            box-sizing: border-box;
+        }
+        
+        .cards-row {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+            width: 100%;
         }
         
         .card {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 16px;
-            padding: 2rem;
+            padding: 2.5rem;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
             width: 100%;
-            max-width: 400px;
+            max-width: 380px;
+            min-width: 280px;
             text-align: center;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
+            box-sizing: border-box;
         }
         
         .card:hover {
@@ -79,14 +91,14 @@
         
         .card h2 {
             color: #1e293b;
-            margin: 0 0 1rem;
+            margin: 0 0 1.5rem;
             font-size: 1.8rem;
             font-weight: 600;
         }
         
         .card p {
             color: #475569;
-            margin: 0 0 1.5rem;
+            margin: 0 0 2rem;
             font-size: 1.1rem;
             line-height: 1.6;
         }
@@ -112,8 +124,8 @@
         
         .logout-btn {
             position: absolute;
-            top: 1rem;
-            right: 1rem;
+            top: 1.5rem;
+            right: 1.5rem;
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.3);
             color: white;
@@ -121,21 +133,67 @@
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s;
+            font-size: 0.9rem;
         }
         
         .logout-btn:hover {
             background: rgba(255, 255, 255, 0.2);
         }
         
+        @media (max-width: 900px) {
+            .cards-row {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .card {
+                max-width: 500px;
+                padding: 2rem;
+            }
+        }
+        
         @media (max-width: 768px) {
+            .header {
+                padding: 1.5rem 1rem;
+                margin-top: 1rem;
+            }
+            
             .header h1 {
                 font-size: 2.5rem;
             }
+            
             .header p {
                 font-size: 1.2rem;
             }
+            
+            .logout-btn {
+                top: 1rem;
+                right: 1rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .header p {
+                font-size: 1rem;
+            }
+            
             .card {
-                padding: 1.5rem;
+                padding: 1.8rem 1.5rem;
+                min-width: auto;
+            }
+            
+            .card h2 {
+                font-size: 1.5rem;
+                margin-bottom: 1rem;
+            }
+            
+            .card p {
+                font-size: 1rem;
+                margin-bottom: 1.5rem;
             }
         }
     </style>
@@ -149,22 +207,26 @@
     </div>
     
     <div class="dashboard-container">
-        <div class="card">
-            <h2>📤 Upload & Trace</h2>
-            <p>Upload your architectural plans and start tracing them in augmented reality with our intuitive tools.</p>
-            <a href="/ar" class="btn-primary">Start AR Tracing</a>
+        <div class="cards-row">
+            <div class="card">
+                <h2>📤 Upload & Trace</h2>
+                <p>Upload your architectural plans and start tracing them in augmented reality with our intuitive tools.</p>
+                <a href="/ar" class="btn-primary">Start AR Tracing</a>
+            </div>
+            
+            <div class="card">
+                <h2>📚 Your Projects</h2>
+                <p>Access and manage your saved projects and previous architectural sketches.</p>
+                <a href="/templates" class="btn-primary">View Projects</a>
+            </div>
         </div>
         
-        <div class="card">
-            <h2>📚 Your Projects</h2>
-            <p>Access and manage your saved projects and previous architectural sketches.</p>
-            <a href="/templates" class="btn-primary">View Projects</a>
-        </div>
-        
-        <div class="card">
-            <h2>⚙️ Account Settings</h2>
-            <p>Update your profile information, subscription details, and account preferences.</p>
-            <a href="/admin" class="btn-primary">Manage Account</a>
+        <div class="cards-row">
+            <div class="card">
+                <h2>⚙️ Account Settings</h2>
+                <p>Update your profile information, subscription details, and account preferences.</p>
+                <a href="/admin" class="btn-primary">Manage Account</a>
+            </div>
         </div>
     </div>
 
