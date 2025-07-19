@@ -3,112 +3,44 @@
 <head>
     <title>Welcome to AR Tracer</title>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-        }
-
-        .onboarding-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-        }
-
-        .onboarding-image {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            object-position: center;
+        /* Your existing styles remain the same */
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+        .onboarding-container { position: relative; width: 100vw; height: 100vh; }
+        .onboarding-image { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover;  /* Changed from 'contain' to 'cover' */
             position: absolute;
             top: 0;
             left: 0;
             transition: opacity 0.5s ease;
         }
-
-        .image-active {
-            opacity: 1;
-            z-index: 1;
-        }
-
-        .image-hidden {
-            opacity: 0;
-            z-index: 0;
-        }
-
+        .image-active { opacity: 1; z-index: 1; }
+        .image-hidden { opacity: 0; z-index: 0; }
         .next-button {
             position: fixed;
             bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 50px;
-            padding: 16px 32px;
-            color: rgb(80, 80, 80);
-            font-size: 28px;
-            font-weight: 600;
-            text-align: center;
-            text-decoration: none;
-            box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.3);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            z-index: 100;
-        }
-
-        .next-button:hover {
-            background: rgba(255, 255, 255, 0.35);
-            box-shadow: 0 4px 20px 0 rgba(31, 38, 135, 0.15);
-        }
-
-        .next-button:active {
-            transform: translateX(-50%) scale(0.98);
-        }
-
-        @supports not (backdrop-filter: blur(20px)) {
-            .next-button {
-                background: rgba(255, 255, 255, 0.85);
-            }
-        }
-
-        /* Progress dots */
-        .progress-dots {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 10px;
-            z-index: 101;
-        }
-
-        .dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.5);
-            cursor: pointer;
-        }
-
-        .dot.active {
+            padding: 12px 24px;
             background: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            z-index: 100;
         }
     </style>
 </head>
 <body>
     <div class="onboarding-container">
-        <<!-- Onboarding images - updated paths -->
-        <img src="/static/onboarding/onboarding1.jpg" class="onboarding-image image-active" id="image1">
-        <img src="/static/onboarding/onboarding2.jpg" class="onboarding-image image-hidden" id="image2">
-        <img src="/static/onboarding/onboarding3.jpg" class="onboarding-image image-hidden" id="image3">
-        <img src="/static/onboarding/onboarding4.jpg" class="onboarding-image image-hidden" id="image4">
-        <img src="/static/onboarding/onboarding5.jpg" class="onboarding-image image-hidden" id="image5">
-        
-        <!-- Continue button -->
+        <!-- Updated image paths -->
+        <img src="/onboarding/images/onboarding1.jpg" class="onboarding-image image-active" id="image1">
+        <img src="/onboarding/images/onboarding2.jpg" class="onboarding-image image-hidden" id="image2">
+        <img src="/onboarding/images/onboarding3.jpg" class="onboarding-image image-hidden" id="image3">
+        <img src="/onboarding/images/onboarding4.jpg" class="onboarding-image image-hidden" id="image4">
+        <img src="/onboarding/images/onboarding5.jpg" class="onboarding-image image-hidden" id="image5">
+
         <button class="next-button" id="nextButton">Continue</button>
     </div>
 
@@ -129,38 +61,33 @@
             document.getElementById(`image${n}`).classList.remove('image-hidden');
             document.getElementById(`image${n}`).classList.add('image-active');
             
-            // Update button text for last slide
-            if (n === totalSlides) {
-                nextButton.textContent = 'Get Started';
-            } else {
-                nextButton.textContent = 'Continue';
-            }
+            // Update button text
+            nextButton.textContent = n === totalSlides ? 'Get Started' : 'Continue';
         }
 
         async function completeOnboarding() {
             try {
                 nextButton.disabled = true;
-                nextButton.textContent = 'Processing...';
+                nextButton.textContent = 'Loading...';
                 
                 const formData = new FormData();
                 formData.append('user_id', userId);
 
-                const response = await fetch('/api/complete-onboarding', {
+                const response = await fetch('/complete-onboarding', {
                     method: 'POST',
                     body: formData,
                     credentials: 'include'
                 });
 
                 if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.detail || 'Failed to complete onboarding');
+                    const error = await response.text();
+                    throw new Error(error || 'Failed to complete onboarding');
                 }
 
-                // Redirect to login page with success
                 window.location.href = '/login?onboarding=success';
             } catch (error) {
                 console.error('Error:', error);
-                alert(`Error: ${error.message}`);
+                alert('Error: ' + error.message);
                 nextButton.disabled = false;
                 nextButton.textContent = 'Try Again';
             }
@@ -175,7 +102,7 @@
             }
         });
 
-        // Initialize first slide
+        // Initialize
         showSlide(1);
     </script>
 </body>
