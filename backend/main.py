@@ -87,7 +87,7 @@ async def auth_middleware(request: Request, call_next):
     return await call_next(request)
 
 # ===== Image Serving ===== #
-@app.get("/static/onboarding/{image_name}")
+@app.get("/onboarding/images/{image_name}")
 async def get_onboarding_image(image_name: str):
     image_path = Path(__file__).parent.parent / "static" / "onboarding" / image_name
     if not image_path.exists():
@@ -141,20 +141,12 @@ def register(user_data: UserRegistration, db: Session = Depends(get_db)):
     }
 
 # Update your complete-onboarding endpoint
-@app.post("/api/complete-onboarding")
+@app.post("/complete-onboarding")
 async def complete_onboarding(
-    request: Request,
+    user_id: str = Form(...),
     db: Session = Depends(get_db)
 ):
     try:
-        # Get form data
-        form_data = await request.form()
-        user_id = form_data.get("user_id")
-        
-        if not user_id:
-            raise HTTPException(status_code=400, detail="user_id required")
-            
-        # Update user status
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
@@ -162,7 +154,6 @@ async def complete_onboarding(
         user.is_first_login = False
         db.commit()
         
-        # Redirect to login page with success message
         response = RedirectResponse(url="/login?onboarding=success", status_code=303)
         response.set_cookie(
             key="session_token",
@@ -177,7 +168,6 @@ async def complete_onboarding(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 # ===== Frontend Routes ===== #
 @app.get("/")
 def root(request: Request):
