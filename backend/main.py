@@ -255,7 +255,7 @@ def ar_viewer(request: Request):
 def admin_dashboard(request: Request):
     if not request.cookies.get("session_token"):
         return RedirectResponse(url="/login")
-    return templates.TemplateResponse("admin.html", {"request": request})
+    return templates.TemplateResponse("admin_users.html", {"request": request})
 
 # ===== Logout ===== #
 @app.post("/api/logout")
