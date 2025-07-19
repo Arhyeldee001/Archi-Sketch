@@ -101,13 +101,12 @@
 </head>
 <body>
     <div class="onboarding-container">
-        <!-- Onboarding images -->
+        <<!-- Onboarding images - updated paths -->
         <img src="/static/onboarding/onboarding1.jpg" class="onboarding-image image-active" id="image1">
         <img src="/static/onboarding/onboarding2.jpg" class="onboarding-image image-hidden" id="image2">
         <img src="/static/onboarding/onboarding3.jpg" class="onboarding-image image-hidden" id="image3">
         <img src="/static/onboarding/onboarding4.jpg" class="onboarding-image image-hidden" id="image4">
         <img src="/static/onboarding/onboarding5.jpg" class="onboarding-image image-hidden" id="image5">
-
         <!-- Progress dots -->
         <div class="progress-dots" id="progressDots">
             <div class="dot active" data-slide="1"></div>
@@ -125,10 +124,8 @@
         let currentSlide = 1;
         const totalSlides = 5;
         const nextButton = document.getElementById('nextButton');
-        const dots = document.querySelectorAll('.dot');
         const userId = new URLSearchParams(window.location.search).get('user_id');
 
-        // Initialize slides
         function showSlide(n) {
             // Hide all images
             document.querySelectorAll('.onboarding-image').forEach(img => {
@@ -140,14 +137,6 @@
             document.getElementById(`image${n}`).classList.remove('image-hidden');
             document.getElementById(`image${n}`).classList.add('image-active');
             
-            // Update dots
-            dots.forEach(dot => {
-                dot.classList.remove('active');
-                if (parseInt(dot.dataset.slide) === n) {
-                    dot.classList.add('active');
-                }
-            });
-            
             // Update button text for last slide
             if (n === totalSlides) {
                 nextButton.textContent = 'Get Started';
@@ -156,36 +145,17 @@
             }
         }
 
-        // Dot click handler
-        dots.forEach(dot => {
-            dot.addEventListener('click', () => {
-                currentSlide = parseInt(dot.dataset.slide);
-                showSlide(currentSlide);
-            });
-        });
-
-        // Next button handler
-        nextButton.addEventListener('click', () => {
-            if (currentSlide < totalSlides) {
-                currentSlide++;
-                showSlide(currentSlide);
-            } else {
-                completeOnboarding();
-            }
-        });
-
-        // Complete onboarding function
         async function completeOnboarding() {
             try {
                 nextButton.disabled = true;
                 nextButton.textContent = 'Processing...';
                 
-                const response = await fetch('/complete-onboarding', {
+                const formData = new FormData();
+                formData.append('user_id', userId);
+
+                const response = await fetch('/api/complete-onboarding', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `user_id=${userId}`,
+                    body: formData,
                     credentials: 'include'
                 });
 
@@ -194,13 +164,24 @@
                     throw new Error(error.detail || 'Failed to complete onboarding');
                 }
 
-                window.location.href = '/dashboard.html';
+                // Redirect to login page with success
+                window.location.href = '/login?onboarding=success';
             } catch (error) {
+                console.error('Error:', error);
                 alert(`Error: ${error.message}`);
                 nextButton.disabled = false;
                 nextButton.textContent = 'Try Again';
             }
         }
+
+        nextButton.addEventListener('click', () => {
+            if (currentSlide < totalSlides) {
+                currentSlide++;
+                showSlide(currentSlide);
+            } else {
+                completeOnboarding();
+            }
+        });
 
         // Initialize first slide
         showSlide(1);
