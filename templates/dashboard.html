@@ -40,6 +40,7 @@
             font-weight: 700;
             line-height: 1.2;
             text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            white-space: pre-line;
         }
         
         .header p {
@@ -72,15 +73,24 @@
         .card {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 16px;
-            padding: 1.5rem;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
-            width: calc(50% - 1.5rem);
-            max-width: 350px;
             text-align: center;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             box-sizing: border-box;
+        }
+        
+        /* Smaller top cards */
+        .card.top-card {
+            width: 280px;
+            padding: 1.5rem;
+        }
+        
+        /* Larger bottom card */
+        .card.bottom-card {
+            width: 350px;
+            padding: 2rem;
         }
         
         .card:hover {
@@ -91,15 +101,29 @@
         .card h2 {
             color: #1e293b;
             margin: 0 0 1rem;
-            font-size: 1.5rem;
             font-weight: 600;
+        }
+        
+        .top-card h2 {
+            font-size: 1.5rem;
+        }
+        
+        .bottom-card h2 {
+            font-size: 1.8rem;
         }
         
         .card p {
             color: #475569;
             margin: 0 0 1.5rem;
-            font-size: 1rem;
             line-height: 1.5;
+        }
+        
+        .top-card p {
+            font-size: 1rem;
+        }
+        
+        .bottom-card p {
+            font-size: 1.1rem;
         }
         
         .btn-primary {
@@ -109,7 +133,6 @@
             padding: 0.7rem 1.5rem;
             border-radius: 8px;
             font-weight: 600;
-            font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.3s;
             text-decoration: none;
@@ -140,10 +163,16 @@
             background: rgba(255, 255, 255, 0.2);
         }
         
-        /* Special case for single card row */
-        .dashboard-container > .cards-row:last-child .card {
-            width: 100%;
-            max-width: 350px;
+        @media (max-width: 900px) {
+            .card.top-card {
+                width: calc(50% - 1rem);
+                max-width: 280px;
+            }
+            
+            .card.bottom-card {
+                width: 100%;
+                max-width: 400px;
+            }
         }
         
         @media (max-width: 768px) {
@@ -154,22 +183,25 @@
             
             .header h1 {
                 font-size: 2rem;
-                white-space: pre-line;
             }
             
             .header p {
                 font-size: 1.1rem;
             }
             
-            .card {
-                width: calc(50% - 0.75rem);
-                padding: 1.2rem;
-                max-width: none;
+            .logout-btn {
+                top: 0.8rem;
+                right: 0.8rem;
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
             }
             
-            .dashboard-container > .cards-row:last-child .card {
-                width: 100%;
-                max-width: 350px;
+            .card.top-card {
+                padding: 1.2rem;
+            }
+            
+            .card.bottom-card {
+                padding: 1.5rem;
             }
         }
         
@@ -182,35 +214,19 @@
                 font-size: 1rem;
             }
             
-            .card {
-                width: calc(50% - 0.5rem);
+            .card.top-card {
+                width: 100%;
+                max-width: 280px;
                 padding: 1rem;
-                min-width: 0;
             }
             
-            .card h2 {
-                font-size: 1.3rem;
-            }
-            
-            .card p {
-                font-size: 0.9rem;
+            .card.bottom-card {
+                padding: 1.2rem;
             }
             
             .btn-primary {
                 padding: 0.6rem 1.2rem;
-                font-size: 0.8rem;
-            }
-        }
-        
-        /* Very small screens (like iPhone 5/SE) */
-        @media (max-width: 320px) {
-            .card {
-                width: 100%;
-                max-width: 280px;
-            }
-            
-            .dashboard-container > .cards-row:first-child {
-                flex-direction: column;
+                font-size: 0.9rem;
             }
         }
     </style>
@@ -225,13 +241,13 @@
     
     <div class="dashboard-container">
         <div class="cards-row">
-            <div class="card">
+            <div class="card top-card">
                 <h2>📤 Upload & Trace</h2>
                 <p>Upload your architectural plans and start tracing them in augmented reality.</p>
                 <a href="/ar" class="btn-primary">Start AR Tracing</a>
             </div>
             
-            <div class="card">
+            <div class="card top-card">
                 <h2>📚 Your Projects</h2>
                 <p>Access and manage your saved projects and previous architectural sketches.</p>
                 <a href="/templates" class="btn-primary">View Projects</a>
@@ -239,7 +255,7 @@
         </div>
         
         <div class="cards-row">
-            <div class="card">
+            <div class="card bottom-card">
                 <h2>⚙️ Account Settings</h2>
                 <p>Update your profile information, subscription details, and preferences.</p>
                 <a href="/admin" class="btn-primary">Manage Account</a>
