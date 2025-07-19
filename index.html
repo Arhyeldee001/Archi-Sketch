@@ -64,77 +64,102 @@
   <!-- Add this modal -->
   <div id="payment-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; color:white; padding:20px; text-align:center;">
     <h2>Premium Subscription</h2>
-    <p>Get 1 month access to AR Tracing for ₦5,000</p>
+    <p>Try free for 1 day or subscribe now for full access</p>
     
     <div style="margin: 20px 0;">
-      <input type="email" id="user-email" placeholder="Your email" style="padding:10px; width:300px; font-size:16px;">
+        <input type="email" id="user-email" placeholder="Your email" style="padding:10px; width:300px; font-size:16px;">
     </div>
     
-    <button id="pay-with-monnify" style="padding:15px 30px; background:#3d5afe; color:white; border:none; border-radius:5px; font-size:18px; cursor:pointer;">
-      Pay with Monnify
-    </button>
+    <div style="display: flex; gap: 10px; justify-content: center;">
+        <button id="start-trial-btn" style="padding:15px 30px; background:#4CAF50; color:white; border:none; border-radius:5px; font-size:18px; cursor:pointer;">
+            Start Free Trial
+        </button>
+        <button id="pay-now-btn" style="padding:15px 30px; background:#3d5afe; color:white; border:none; border-radius:5px; font-size:18px; cursor:pointer;">
+            Pay Now (₦5,000)
+        </button>
+    </div>
     
     <button onclick="closePaymentModal()" style="margin-top:20px; background:transparent; color:#aaa; border:1px solid #aaa; padding:10px 20px;">
-      Cancel
+        Cancel
     </button>
-  </div>
+</div>
+
+<script>
+// Updated payment functions
+async function startTrial() {
+    const email = document.getElementById('user-email').value;
+    if (!email) {
+        alert("Please enter your email");
+        return;
+    }
+
+    try {
+        const response = await fetch('/initiate-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        
+        const data = await response.json();
+        
+        if (data.trial_active) {
+            // Set trial expiry (current time + 24 hours)
+            const expiry = new Date();
+            expiry.setHours(expiry.getHours() + 24);
+            
+            localStorage.setItem('subscription_expiry', expiry.toISOString());
+            localStorage.setItem('user_email', email);
+            
+            alert("1-day free trial activated!");
+            closePaymentModal();
+        } else {
+            alert("Could not start trial. Please try paying instead.");
+        }
+    } catch (error) {
+        console.error("Trial error:", error);
+        alert("Error starting trial. Please try again.");
+    }
+}
+
+async function payNow() {
+    const email = document.getElementById('user-email').value;
+    if (!email) {
+        alert("Please enter your email");
+        return;
+    }
+
+    document.getElementById('pay-now-btn').innerHTML = "Processing...";
     
-  <script>
-  // Payment functions
-  function showPaymentModal() {
-      document.getElementById('payment-modal').style.display = 'block';
-  }
-  
-  function closePaymentModal() {
-      document.getElementById('payment-modal').style.display = 'none';
-  }
-  
-  async function payWithMonnify() {
-      const email = document.getElementById('user-email').value;
-      if (!email) {
-          alert("Please enter your email");
-          return;
-      }
-      
-      // Show loading indicator
-      document.getElementById('pay-with-monnify').innerHTML = "Processing...";
-      
-      try {
-          const response = await fetch('/initiate-payment', {
-              method: 'POST'
-          });
-          
-          const data = await response.json();
-          
-          if (data.responseBody && data.responseBody.checkoutUrl) {
-              // Save email to localStorage
-              localStorage.setItem('user_email', email);
-              
-              // Redirect to Monnify payment page
-              window.location.href = data.responseBody.checkoutUrl;
-          } else {
-              alert("Payment initiation failed. Please try again.");
-          }
-      } catch (error) {
-          console.error("Payment error:", error);
-          alert("An error occurred. Please try again.");
-      }
-  }
-  
-  // Attach event listeners
-  document.getElementById('pay-with-monnify').addEventListener('click', payWithMonnify);
-  
-  // Check if user has access
-  function checkAccess() {
-      const expiry = localStorage.getItem('subscription_expiry');
-      if (!expiry || new Date(expiry) < new Date()) {
-          showPaymentModal();
-      }
-  }
-  
-  // Run on page load
-  document.addEventListener('DOMContentLoaded', checkAccess);
-  </script>
+    try {
+        const response = await fetch('/initiate-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                email,
+                immediate: true 
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.responseBody?.checkoutUrl) {
+            localStorage.setItem('user_email', email);
+            window.location.href = data.responseBody.checkoutUrl;
+        } else {
+            alert("Payment initiation failed. Please try again.");
+        }
+    } catch (error) {
+        console.error("Payment error:", error);
+        alert("An error occurred. Please try again.");
+    } finally {
+        document.getElementById('pay-now-btn').innerHTML = "Pay Now (₦5,000)";
+    }
+}
+
+// Update event listeners
+document.getElementById('start-trial-btn').addEventListener('click', startTrial);
+document.getElementById('pay-now-btn').addEventListener('click', payNow);
+</script>
 
   
   <script src="https://cdn.jsdelivr.net/npm/@interactjs/interactjs/index.min.js"></script>
