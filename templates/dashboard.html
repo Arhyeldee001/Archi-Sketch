@@ -31,7 +31,7 @@
             padding: 2rem 1rem;
             width: 100%;
             max-width: 1200px;
-            margin-top: 3rem; /* Increased top margin */
+            margin-top: 3.5rem;
         }
         
         .header h1 {
@@ -53,7 +53,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 1.5rem; /* Reduced gap */
+            gap: 1.5rem;
             padding: 1rem;
             width: 100%;
             max-width: 1200px;
@@ -65,19 +65,18 @@
             display: flex;
             justify-content: center;
             flex-wrap: wrap;
-            gap: 1.5rem; /* Reduced gap */
+            gap: 1.5rem;
             width: 100%;
         }
         
         .card {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 16px;
-            padding: 1.5rem; /* Reduced padding */
+            padding: 1.5rem;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
-            width: 100%;
-            max-width: 350px; /* Reduced max width */
-            min-width: 250px; /* Reduced min width */
+            width: calc(50% - 1.5rem);
+            max-width: 350px;
             text-align: center;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -91,15 +90,15 @@
         
         .card h2 {
             color: #1e293b;
-            margin: 0 0 1rem; /* Reduced margin */
-            font-size: 1.5rem; /* Reduced font size */
+            margin: 0 0 1rem;
+            font-size: 1.5rem;
             font-weight: 600;
         }
         
         .card p {
             color: #475569;
-            margin: 0 0 1.5rem; /* Reduced margin */
-            font-size: 1rem; /* Reduced font size */
+            margin: 0 0 1.5rem;
+            font-size: 1rem;
             line-height: 1.5;
         }
         
@@ -107,10 +106,10 @@
             background: var(--primary);
             color: white;
             border: none;
-            padding: 0.7rem 1.5rem; /* Reduced padding */
+            padding: 0.7rem 1.5rem;
             border-radius: 8px;
             font-weight: 600;
-            font-size: 0.9rem; /* Reduced font size */
+            font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.3s;
             text-decoration: none;
@@ -123,9 +122,9 @@
         }
         
         .logout-btn {
-            position: absolute;
-            top: 1.5rem;
-            right: 1.5rem;
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.3);
             color: white;
@@ -134,47 +133,43 @@
             cursor: pointer;
             transition: all 0.3s;
             font-size: 0.9rem;
-            z-index: 10;
+            z-index: 100;
         }
         
         .logout-btn:hover {
             background: rgba(255, 255, 255, 0.2);
         }
         
+        /* Special case for single card row */
+        .dashboard-container > .cards-row:last-child .card {
+            width: 100%;
+            max-width: 350px;
+        }
+        
         @media (max-width: 768px) {
             .header {
                 padding: 1.5rem 1rem;
-                margin-top: 4rem; /* Increased top margin for mobile */
+                margin-top: 3.5rem;
             }
             
             .header h1 {
                 font-size: 2rem;
-                white-space: pre-line; /* Allows line break */
+                white-space: pre-line;
             }
             
             .header p {
                 font-size: 1.1rem;
             }
             
-            .logout-btn {
-                top: 1rem;
-                right: 1rem;
-                padding: 0.4rem 0.8rem;
-                font-size: 0.8rem;
-            }
-            
             .card {
+                width: calc(50% - 0.75rem);
                 padding: 1.2rem;
-                max-width: 300px;
-                min-width: 200px;
+                max-width: none;
             }
             
-            .card h2 {
-                font-size: 1.3rem;
-            }
-            
-            .card p {
-                font-size: 0.9rem;
+            .dashboard-container > .cards-row:last-child .card {
+                width: 100%;
+                max-width: 350px;
             }
         }
         
@@ -188,13 +183,34 @@
             }
             
             .card {
+                width: calc(50% - 0.5rem);
                 padding: 1rem;
-                max-width: 280px;
+                min-width: 0;
+            }
+            
+            .card h2 {
+                font-size: 1.3rem;
+            }
+            
+            .card p {
+                font-size: 0.9rem;
             }
             
             .btn-primary {
                 padding: 0.6rem 1.2rem;
                 font-size: 0.8rem;
+            }
+        }
+        
+        /* Very small screens (like iPhone 5/SE) */
+        @media (max-width: 320px) {
+            .card {
+                width: 100%;
+                max-width: 280px;
+            }
+            
+            .dashboard-container > .cards-row:first-child {
+                flex-direction: column;
             }
         }
     </style>
@@ -203,7 +219,7 @@
     <button class="logout-btn" onclick="logout()">Log Out</button>
     
     <div class="header">
-        <h1>Welcome to<br>Archi Sketch</h1> <!-- Added line break -->
+        <h1>Welcome to<br>Archi Sketch</h1>
         <p>Transform your architectural visions into augmented reality</p>
     </div>
     
