@@ -257,6 +257,40 @@ def admin_dashboard(request: Request):
         return RedirectResponse(url="/login")
     return templates.TemplateResponse("admin_users.html", {"request": request})
 
+@app.get("/payment-success")
+async def payment_success(
+    email: str,
+    transactionReference: str,
+    db: Session = Depends(get_db)
+):
+    # Verify payment with Monnify
+    if TEST_MODE:
+        # In test mode, just grant 30 days access
+        expiry = datetime.now() + timedelta(days=30)
+    else:
+        # In production, verify with Monnify API
+        auth_str = f"{os.getenv('MONNIFY_API_KEY')}:{os.getenv('MONNIFY_SECRET_KEY')}"
+        encoded = base64.b64encode(auth_str.encode()).decode()
+        
+        response = requests.get(
+            f"https://api.monnify.com/api/v2/transactions/{transactionReference}",
+            headers={"Authorization": f"Basic {encoded}"}
+        )
+        
+        if not response.ok:
+            raise HTTPException(status_code=400, detail="Payment verification failed")
+        
+        expiry = datetime.now() + timedelta(days=30)
+    
+    # Update user in database
+    user = db.query(User).filter(User.email == email).first()
+    if user:
+        user.subscription_expiry = expiry
+        db.commit()
+    
+    # Redirect to AR tracer with success
+    return RedirectResponse(url="/ar?payment=success")
+
 # ===== Logout ===== #
 @app.post("/api/logout")
 def logout():
