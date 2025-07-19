@@ -3,20 +3,19 @@
 <head>
     <title>Welcome to AR Tracer</title>
     <style>
-        /* Your existing styles remain the same */
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
-        .onboarding-container { position: relative; width: 100vw; height: 100vh; }
+        /* Keep your existing styles */
+        body, html { margin: 0; padding: 0; height: 100%; }
+        .onboarding-container { position: relative; width: 100%; height: 100%; }
         .onboarding-image { 
             width: 100%; 
             height: 100%; 
-            object-fit: cover;  /* Changed from 'contain' to 'cover' */
+            object-fit: cover;
             position: absolute;
             top: 0;
             left: 0;
-            transition: opacity 0.5s ease;
+            display: none;
         }
-        .image-active { opacity: 1; z-index: 1; }
-        .image-hidden { opacity: 0; z-index: 0; }
+        .onboarding-image.active { display: block; }
         .next-button {
             position: fixed;
             bottom: 40px;
@@ -34,35 +33,39 @@
 </head>
 <body>
     <div class="onboarding-container">
-        <!-- Updated image paths -->
-        <img src="/onboarding/images/onboarding1.jpg" class="onboarding-image image-active" id="image1">
-        <img src="/onboarding/images/onboarding2.jpg" class="onboarding-image image-hidden" id="image2">
-        <img src="/onboarding/images/onboarding3.jpg" class="onboarding-image image-hidden" id="image3">
-        <img src="/onboarding/images/onboarding4.jpg" class="onboarding-image image-hidden" id="image4">
-        <img src="/onboarding/images/onboarding5.jpg" class="onboarding-image image-hidden" id="image5">
+        <!-- Use absolute paths with your domain -->
+        <img src="https://archisketch.onrender.com/static/onboarding/onboarding1.jpg" 
+             class="onboarding-image active" id="image1">
+        <img src="https://archisketch.onrender.com/static/onboarding/onboarding2.jpg" 
+             class="onboarding-image" id="image2">
+        <img src="https://archisketch.onrender.com/static/onboarding/onboarding3.jpg" 
+             class="onboarding-image" id="image3">
+        <img src="https://archisketch.onrender.com/static/onboarding/onboarding4.jpg" 
+             class="onboarding-image" id="image4">
+        <img src="https://archisketch.onrender.com/static/onboarding/onboarding5.jpg" 
+             class="onboarding-image" id="image5">
 
         <button class="next-button" id="nextButton">Continue</button>
     </div>
 
     <script>
-        let currentSlide = 1;
-        const totalSlides = 5;
+        const slides = [
+            "onboarding1.jpg",
+            "onboarding2.jpg",
+            "onboarding3.jpg",
+            "onboarding4.jpg",
+            "onboarding5.jpg"
+        ];
+        let currentSlide = 0;
         const nextButton = document.getElementById('nextButton');
         const userId = new URLSearchParams(window.location.search).get('user_id');
 
-        function showSlide(n) {
-            // Hide all images
+        function showSlide(index) {
             document.querySelectorAll('.onboarding-image').forEach(img => {
-                img.classList.remove('image-active');
-                img.classList.add('image-hidden');
+                img.classList.remove('active');
             });
-            
-            // Show current image
-            document.getElementById(`image${n}`).classList.remove('image-hidden');
-            document.getElementById(`image${n}`).classList.add('image-active');
-            
-            // Update button text
-            nextButton.textContent = n === totalSlides ? 'Get Started' : 'Continue';
+            document.getElementById(`image${index+1}`).classList.add('active');
+            nextButton.textContent = index === slides.length-1 ? 'Get Started' : 'Continue';
         }
 
         async function completeOnboarding() {
@@ -70,31 +73,33 @@
                 nextButton.disabled = true;
                 nextButton.textContent = 'Loading...';
                 
-                const formData = new FormData();
+                const formData = new URLSearchParams();
                 formData.append('user_id', userId);
 
-                const response = await fetch('/complete-onboarding', {
+                const response = await fetch('https://archisketch.onrender.com/complete-onboarding', {
                     method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
                     body: formData,
                     credentials: 'include'
                 });
 
                 if (!response.ok) {
-                    const error = await response.text();
-                    throw new Error(error || 'Failed to complete onboarding');
+                    throw new Error('Failed to complete onboarding');
                 }
 
-                window.location.href = '/login?onboarding=success';
+                window.location.href = 'https://archisketch.onrender.com/login?onboarding=success';
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error: ' + error.message);
+                alert('Error completing onboarding. Please try again.');
                 nextButton.disabled = false;
                 nextButton.textContent = 'Try Again';
             }
         }
 
         nextButton.addEventListener('click', () => {
-            if (currentSlide < totalSlides) {
+            if (currentSlide < slides.length-1) {
                 currentSlide++;
                 showSlide(currentSlide);
             } else {
@@ -103,7 +108,7 @@
         });
 
         // Initialize
-        showSlide(1);
+        showSlide(0);
     </script>
 </body>
 </html>
