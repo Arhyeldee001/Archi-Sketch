@@ -31,7 +31,7 @@
             padding: 2rem 1rem;
             width: 100%;
             max-width: 1200px;
-            margin-top: 2rem;
+            margin-top: 3rem; /* Increased top margin */
         }
         
         .header h1 {
@@ -53,7 +53,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 2rem;
+            gap: 1.5rem; /* Reduced gap */
             padding: 1rem;
             width: 100%;
             max-width: 1200px;
@@ -65,19 +65,19 @@
             display: flex;
             justify-content: center;
             flex-wrap: wrap;
-            gap: 2rem;
+            gap: 1.5rem; /* Reduced gap */
             width: 100%;
         }
         
         .card {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 16px;
-            padding: 2.5rem;
+            padding: 1.5rem; /* Reduced padding */
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
             width: 100%;
-            max-width: 380px;
-            min-width: 280px;
+            max-width: 350px; /* Reduced max width */
+            min-width: 250px; /* Reduced min width */
             text-align: center;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -91,26 +91,26 @@
         
         .card h2 {
             color: #1e293b;
-            margin: 0 0 1.5rem;
-            font-size: 1.8rem;
+            margin: 0 0 1rem; /* Reduced margin */
+            font-size: 1.5rem; /* Reduced font size */
             font-weight: 600;
         }
         
         .card p {
             color: #475569;
-            margin: 0 0 2rem;
-            font-size: 1.1rem;
-            line-height: 1.6;
+            margin: 0 0 1.5rem; /* Reduced margin */
+            font-size: 1rem; /* Reduced font size */
+            line-height: 1.5;
         }
         
         .btn-primary {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 0.8rem 1.8rem;
+            padding: 0.7rem 1.5rem; /* Reduced padding */
             border-radius: 8px;
             font-weight: 600;
-            font-size: 1rem;
+            font-size: 0.9rem; /* Reduced font size */
             cursor: pointer;
             transition: all 0.3s;
             text-decoration: none;
@@ -134,47 +134,53 @@
             cursor: pointer;
             transition: all 0.3s;
             font-size: 0.9rem;
+            z-index: 10;
         }
         
         .logout-btn:hover {
             background: rgba(255, 255, 255, 0.2);
         }
         
-        @media (max-width: 900px) {
-            .cards-row {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .card {
-                max-width: 500px;
-                padding: 2rem;
-            }
-        }
-        
         @media (max-width: 768px) {
             .header {
                 padding: 1.5rem 1rem;
-                margin-top: 1rem;
+                margin-top: 4rem; /* Increased top margin for mobile */
             }
             
             .header h1 {
-                font-size: 2.5rem;
+                font-size: 2rem;
+                white-space: pre-line; /* Allows line break */
             }
             
             .header p {
-                font-size: 1.2rem;
+                font-size: 1.1rem;
             }
             
             .logout-btn {
                 top: 1rem;
                 right: 1rem;
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+            }
+            
+            .card {
+                padding: 1.2rem;
+                max-width: 300px;
+                min-width: 200px;
+            }
+            
+            .card h2 {
+                font-size: 1.3rem;
+            }
+            
+            .card p {
+                font-size: 0.9rem;
             }
         }
         
         @media (max-width: 480px) {
             .header h1 {
-                font-size: 2rem;
+                font-size: 1.8rem;
             }
             
             .header p {
@@ -182,18 +188,13 @@
             }
             
             .card {
-                padding: 1.8rem 1.5rem;
-                min-width: auto;
+                padding: 1rem;
+                max-width: 280px;
             }
             
-            .card h2 {
-                font-size: 1.5rem;
-                margin-bottom: 1rem;
-            }
-            
-            .card p {
-                font-size: 1rem;
-                margin-bottom: 1.5rem;
+            .btn-primary {
+                padding: 0.6rem 1.2rem;
+                font-size: 0.8rem;
             }
         }
     </style>
@@ -202,7 +203,7 @@
     <button class="logout-btn" onclick="logout()">Log Out</button>
     
     <div class="header">
-        <h1>Welcome to <br> Archi Sketch</h1>
+        <h1>Welcome to<br>Archi Sketch</h1> <!-- Added line break -->
         <p>Transform your architectural visions into augmented reality</p>
     </div>
     
@@ -210,7 +211,7 @@
         <div class="cards-row">
             <div class="card">
                 <h2>📤 Upload & Trace</h2>
-                <p>Upload your architectural plans and start tracing them in augmented reality with our intuitive tools.</p>
+                <p>Upload your architectural plans and start tracing them in augmented reality.</p>
                 <a href="/ar" class="btn-primary">Start AR Tracing</a>
             </div>
             
@@ -224,7 +225,7 @@
         <div class="cards-row">
             <div class="card">
                 <h2>⚙️ Account Settings</h2>
-                <p>Update your profile information, subscription details, and account preferences.</p>
+                <p>Update your profile information, subscription details, and preferences.</p>
                 <a href="/admin" class="btn-primary">Manage Account</a>
             </div>
         </div>
