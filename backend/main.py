@@ -3,7 +3,7 @@ import base64
 import requests
 import json
 from datetime import datetime, timedelta
-from fastapi import FastAPI, Depends, HTTPException, Request, Response, Query
+from fastapi import FastAPI, Depends, HTTPException, Request, Response, Query, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -35,7 +35,7 @@ templates = Jinja2Templates(directory="templates")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,  # Critical for cookies
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -72,22 +72,27 @@ SUBSCRIPTIONS_FILE = "subscriptions.txt"
 # ===== Middleware ===== #
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
-    # Skip auth for these paths
-    if request.url.path in ["/", "/login", "/api/login", "/api/register", "/static", "/onboarding"]:
+    if request.url.path in ["/", "/login", "/api/login", "/api/register", "/static", "/onboarding", "/onboarding/images"]:
         return await call_next(request)
     
-    # Check session cookie
     session_token = request.cookies.get("session_token")
     if not session_token:
         return RedirectResponse(url="/login")
     
-    # Verify token format
     if not session_token.startswith("session_"):
         response = RedirectResponse(url="/login")
         response.delete_cookie("session_token")
         return response
     
     return await call_next(request)
+
+# ===== Image Serving ===== #
+@app.get("/onboarding/images/{image_name}")
+async def get_onboarding_image(image_name: str):
+    image_path = static_path / "onboarding" / image_name
+    if not image_path.exists():
+        raise HTTPException(status_code=404, detail="Image not found")
+    return FileResponse(image_path)
 
 # ===== Auth Endpoints ===== #
 @app.post("/api/login")
@@ -96,13 +101,11 @@ def login(response: Response, payload: AuthData, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    # Create redirect response
     if user.is_first_login:
         redirect_url = f"/onboarding?user_id={user.id}"
     else:
         redirect_url = "/dashboard.html"
     
-    # Set cookies in response
     response = JSONResponse({
         "message": "Login successful",
         "redirect_to": redirect_url
@@ -111,9 +114,9 @@ def login(response: Response, payload: AuthData, db: Session = Depends(get_db)):
     response.set_cookie(
         key="session_token",
         value=f"session_{user.id}",
-        max_age=31536000,  # 1 year
+        max_age=31536000,
         httponly=True,
-        secure=False,  # Set True in production with HTTPS
+        secure=False,
         samesite='lax',
         path='/'
     )
@@ -138,15 +141,17 @@ def register(user_data: UserRegistration, db: Session = Depends(get_db)):
     }
 
 @app.post("/complete-onboarding")
-async def complete_onboarding(request: Request, db: Session = Depends(get_db)):
+async def complete_onboarding(
+    request: Request,
+    user_id: str = Form(...),
+    db: Session = Depends(get_db)
+):
     try:
-        data = await request.json()
-        user_id = data.get("user_id")
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
         
-        if not user_id:
-            raise HTTPException(status_code=400, detail="user_id required")
-            
-        db.query(User).filter(User.id == user_id).update({"is_first_login": False})
+        user.is_first_login = False
         db.commit()
         
         response = RedirectResponse(url="/dashboard.html", status_code=303)
@@ -161,8 +166,8 @@ async def complete_onboarding(request: Request, db: Session = Depends(get_db)):
         )
         return response
         
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=400, detail="Invalid JSON")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ===== Frontend Routes ===== #
 @app.get("/")
