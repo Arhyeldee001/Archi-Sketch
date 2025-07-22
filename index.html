@@ -188,6 +188,41 @@
   document.addEventListener('DOMContentLoaded', () => {
       new PaymentSystem();
   });
+
+// Check for payment result on page load
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    if (urlParams.has('payment')) {
+        const result = urlParams.get('payment');
+        
+        switch(result) {
+            case 'success':
+                const expiry = urlParams.get('expiry');
+                localStorage.setItem('subscription_expiry', expiry);
+                alert("Payment successful! Enjoy full access.");
+                // Clean URL
+                window.history.replaceState({}, document.title, "/ar");
+                break;
+                
+            case 'failed':
+                alert("Payment verification failed. Please try again.");
+                window.history.replaceState({}, document.title, "/ar");
+                break;
+                
+            case 'test_success':
+                // For test mode
+                const testExpiry = new Date(Date.now() + 30*24*60*60*1000).toISOString();
+                localStorage.setItem('subscription_expiry', testExpiry);
+                alert("TEST MODE: Payment simulation successful");
+                window.history.replaceState({}, document.title, "/ar");
+                break;
+        }
+    }
+    
+    new PaymentSystem(); // Initialize your payment controller
+});
+  
 </script>
 
   
