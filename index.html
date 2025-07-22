@@ -84,8 +84,7 @@
     </button>
 </div>
 
-<script>
-// Payment system controller
+// Payment System Controller
 class PaymentSystem {
     constructor() {
         this.paymentModal = document.getElementById('payment-modal');
@@ -93,11 +92,8 @@ class PaymentSystem {
     }
 
     init() {
-        // Set up event listeners
-        document.getElementById('start-trial-btn')?.addEventListener('click', () => this.startTrial());
-        document.getElementById('pay-now-btn')?.addEventListener('click', () => this.payNow());
-        
-        // Check access on page load
+        document.getElementById('start-trial-btn').addEventListener('click', () => this.startTrial());
+        document.getElementById('pay-now-btn').addEventListener('click', () => this.payNow());
         this.checkAccess();
     }
 
@@ -110,37 +106,18 @@ class PaymentSystem {
     }
 
     async checkAccess() {
-        // Check local storage first
         const expiry = localStorage.getItem('subscription_expiry');
-        
-        if (expiry && new Date(expiry) > new Date()) {
-            return; // User has valid access
-        }
-        
-        // Check with server
-        try {
-            const response = await fetch('/api/check-subscription');
-            if (response.ok) {
-                const { hasAccess, expiryDate } = await response.json();
-                if (hasAccess) {
-                    localStorage.setItem('subscription_expiry', expiryDate);
-                    return;
-                }
-            }
-        } catch (error) {
-            console.error("Subscription check failed:", error);
-        }
-        
-        // No valid access found
+        if (expiry && new Date(expiry) > new Date()) return;
         this.showPaymentModal();
     }
 
     async startTrial() {
         const email = document.getElementById('user-email').value;
-        if (!email) {
-            alert("Please enter your email");
-            return;
-        }
+        if (!email) return alert("Please enter your email");
+
+        const trialBtn = document.getElementById('start-trial-btn');
+        trialBtn.disabled = true;
+        trialBtn.textContent = "Activating...";
 
         try {
             const response = await fetch('/initiate-trial', {
@@ -148,65 +125,68 @@ class PaymentSystem {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
             });
+
+            if (!response.ok) throw new Error(await response.text());
+
+            const { trial_active, expiry_date } = await response.json();
             
-            if (response.ok) {
-                const { expiryDate } = await response.json();
-                localStorage.setItem('subscription_expiry', expiryDate);
+            if (trial_active) {
+                localStorage.setItem('subscription_expiry', expiry_date);
                 localStorage.setItem('user_email', email);
-                
-                alert("1-day free trial activated!");
+                alert("Free trial activated! Enjoy 24 hours of access.");
                 this.closePaymentModal();
-                window.location.reload(); // Refresh to apply access
+                window.location.reload();
             } else {
-                alert("Could not start trial. Please try paying instead.");
+                throw new Error("Trial not activated");
             }
         } catch (error) {
             console.error("Trial error:", error);
-            alert("Error starting trial. Please try again.");
+            alert("Could not start trial. Please try paying instead.");
+        } finally {
+            trialBtn.disabled = false;
+            trialBtn.textContent = "Start Free Trial";
         }
     }
 
     async payNow() {
         const email = document.getElementById('user-email').value;
-        if (!email) {
-            alert("Please enter your email");
-            return;
-        }
+        if (!email) return alert("Please enter your email");
 
-        const payButton = document.getElementById('pay-now-btn');
-        payButton.innerHTML = "Processing...";
-        payButton.disabled = true;
-        
+        const payBtn = document.getElementById('pay-now-btn');
+        payBtn.disabled = true;
+        payBtn.textContent = "Processing...";
+
         try {
             const response = await fetch('/initiate-payment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, immediate: true })
             });
+
+            if (!response.ok) throw new Error(await response.text());
+
+            const { checkoutUrl } = await response.json();
             
-            const data = await response.json();
-            
-            if (data.checkoutUrl) {
+            if (checkoutUrl) {
                 localStorage.setItem('user_email', email);
-                window.location.href = data.checkoutUrl;
+                window.location.href = checkoutUrl;
             } else {
-                alert("Payment initiation failed. Please try again.");
+                throw new Error("No checkout URL received");
             }
         } catch (error) {
             console.error("Payment error:", error);
-            alert("An error occurred. Please try again.");
+            alert("Payment initiation failed. Please try again.");
         } finally {
-            payButton.innerHTML = "Pay Now (₦5,000)";
-            payButton.disabled = false;
+            payBtn.disabled = false;
+            payBtn.textContent = "Pay Now (₦5,000)";
         }
     }
 }
 
-// Initialize when DOM is loaded
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     new PaymentSystem();
 });
-</script>
 
   
   <script src="https://cdn.jsdelivr.net/npm/@interactjs/interactjs/index.min.js"></script>
