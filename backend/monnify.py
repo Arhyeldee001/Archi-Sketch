@@ -1,31 +1,57 @@
-import base64
-import requests
+import os
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import JSONResponse
-from datetime import datetime, timedelta
-import os
+import base64
+import requests
 
 router = APIRouter()
 
-# Sandbox credentials - REPLACE THESE WITH YOURS
-MONNIFY_API_KEY = "MK_TEST_TFD7XNBYF2"
-MONNIFY_SECRET_KEY = "R1WZ04VD1PQ9ZW14R3FKF4QLVSJTJZTH"
-CONTRACT_CODE = "4527853034"
-BASE_URL = "https://your-render-url.onrender.com"  # Your Render URL
+# Configuration
+TEST_MODE = os.getenv("TEST_MODE", "true").lower() == "true"
+TRIAL_DURATION_HOURS = 24  # 1 day trial
 
-def get_monnify_auth_header():
+# Sandbox credentials - replace with yours from Monnify dashboard
+MONNIFY_API_KEY = os.getenv("MONNIFY_API_KEY", "MK_TEST_XXXXXXXXXXXXXXXX")
+MONNIFY_SECRET_KEY = os.getenv("MONNIFY_SECRET_KEY", "YOUR_TEST_SECRET_KEY")
+CONTRACT_CODE = os.getenv("CONTRACT_CODE", "MO_TEST_XXXXXXXXXXXXXXXX")
+BASE_URL = os.getenv("BASE_URL", "https://your-render-url.onrender.com")
+
+def get_auth_header():
     auth_str = f"{MONNIFY_API_KEY}:{MONNIFY_SECRET_KEY}"
     return base64.b64encode(auth_str.encode()).decode()
 
+@router.post("/initiate-trial")
+async def start_trial(request: Request):
+    try:
+        data = await request.json()
+        email = data.get("email")
+        
+        if not email:
+            raise HTTPException(status_code=400, detail="Email required")
+
+        # In test mode, simulate successful trial
+        expiry_date = datetime.now() + timedelta(hours=TRIAL_DURATION_HOURS)
+        
+        return JSONResponse({
+            "status": "success",
+            "trial_active": True,
+            "expiry_date": expiry_date.isoformat(),
+            "message": f"Free trial activated for {TRIAL_DURATION_HOURS} hours"
+        })
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/initiate-payment")
 async def initiate_payment(request: Request):
-    data = await request.json()
-    email = data.get("email")
-    
-    if not email:
-        raise HTTPException(status_code=400, detail="Email required")
-
     try:
+        data = await request.json()
+        email = data.get("email")
+        
+        if not email:
+            raise HTTPException(status_code=400, detail="Email required")
+
         # Generate unique reference
         transaction_ref = f"ARTRACER-{datetime.now().strftime('%Y%m%d%H%M%S')}"
         
@@ -44,49 +70,19 @@ async def initiate_payment(request: Request):
         response = requests.post(
             "https://sandbox.monnify.com/api/v1/merchant/transactions/init-transaction",
             json=payload,
-            headers={
-                "Authorization": f"Basic {get_monnify_auth_header()}"
-            }
+            headers={"Authorization": f"Basic {get_auth_header()}"}
         )
 
         if response.status_code == 200:
-            return JSONResponse(response.json())
-        
-        raise HTTPException(
-            status_code=response.status_code,
-            detail=f"Monnify error: {response.text}"
-        )
-
-    @router.get("/payment-success")
-async def payment_success(
-    paymentReference: str,
-    transactionReference: str,
-    amountPaid: float
-):
-    # Verify the payment with Monnify
-    try:
-        verify_response = requests.get(
-            f"https://sandbox.monnify.com/api/v2/transactions/{transactionReference}",
-            headers={"Authorization": f"Basic {get_monnify_auth_header()}"}
-        )
-        
-        if verify_response.status_code == 200:
-            # Payment successful - grant access
-            expiry_date = datetime.now() + timedelta(days=30)
             return JSONResponse({
                 "status": "success",
-                "expiry_date": expiry_date.isoformat()
+                "checkoutUrl": response.json().get("responseBody", {}).get("checkoutUrl")
             })
-    
-    except Exception as e:
-        print(f"Verification failed: {str(e)}")
-    
-    return JSONResponse(
-        {"status": "failed"},
-        status_code=400
-    )
-    except Exception as e:
+            
         raise HTTPException(
-            status_code=500, 
-            detail=f"Payment processing failed: {str(e)}"
+            status_code=response.status_code,
+            detail=response.text
         )
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
