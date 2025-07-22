@@ -63,7 +63,11 @@ async def initiate_payment(request: Request):
             "paymentDescription": "1-month AR Tracer Subscription",
             "currencyCode": "NGN",
             "contractCode": CONTRACT_CODE,
-            "redirectUrl": f"{BASE_URL}/payment-success",
+            "redirectUrl": f"{BASE_URL}/payment-success?"
+                         f"paymentReference={transaction_ref}&"
+                         f"transactionReference=PLACEHOLDER&"  # Monnify will replace this
+                         f"status=PLACEHOLDER&"
+                         f"amountPaid=5000",
             "paymentMethods": ["CARD", "ACCOUNT_TRANSFER"]
         }
 
@@ -86,3 +90,56 @@ async def initiate_payment(request: Request):
             
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/payment-success")
+async def payment_success(
+    request: Request,
+    paymentReference: str = None,
+    transactionReference: str = None,
+    amountPaid: float = None,
+    status: str = None
+):
+    # Debugging - log incoming parameters
+    print(f"Received callback with: {request.query_params}")
+    
+    # Test mode simulation
+    if TEST_MODE and not transactionReference:
+        expiry_date = datetime.now() + timedelta(days=30)
+        return RedirectResponse(
+            url=f"/ar?payment=success&expiry={expiry_date.isoformat()}"
+        )
+    
+    # Verify minimum required parameters
+    if not transactionReference:
+        raise HTTPException(
+            status_code=400,
+            detail="Transaction reference missing"
+        )
+    
+    # Verify payment with Monnify
+    try:
+        auth_header = f"Basic {get_auth_header()}"
+        verify_url = f"https://sandbox.monnify.com/api/v2/transactions/{transactionReference}"
+        
+        verify_response = requests.get(
+            verify_url,
+            headers={"Authorization": auth_header}
+        )
+        
+        if verify_response.status_code == 200:
+            payment_data = verify_response.json()
+            
+            if payment_data.get("paymentStatus") == "PAID":
+                expiry_date = datetime.now() + timedelta(days=30)
+                
+                # In production: Save to database here
+                return RedirectResponse(
+                    url=f"/ar?payment=success&expiry={expiry_date.isoformat()}"
+                )
+    
+    except Exception as e:
+        print(f"Payment verification failed: {str(e)}")
+    
+    # If any check fails
+    return RedirectResponse(url="/ar?payment=failed")
