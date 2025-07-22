@@ -85,138 +85,126 @@
 </div>
 
 <script>
-// Payment Modal Control
-const paymentModal = document.getElementById('payment-modal');
-
-// Show modal immediately for testing (remove later)
-function showPaymentModal() {
-    console.log("Showing payment modal");
-    paymentModal.style.display = 'block';
-}
-
-function closePaymentModal() {
-    paymentModal.style.display = 'none';
-}
-
-// Check if user has access
-async function checkAccess() {
-    // For testing, always show payment options
-    showPaymentModal();
-    return;
-    
-    // Actual implementation (uncomment when backend is ready):
-    /*
-    const expiry = localStorage.getItem('subscription_expiry');
-    if (expiry && new Date(expiry) > new Date()) {
-        return; // User has access
+// Payment system controller
+class PaymentSystem {
+    constructor() {
+        this.paymentModal = document.getElementById('payment-modal');
+        this.init();
     }
-    
-    try {
-        const response = await fetch('/api/check-subscription');
-        if (response.ok) {
-            const data = await response.json();
-            if (data.hasAccess) {
-                localStorage.setItem('subscription_expiry', data.expiryDate);
-                return;
+
+    init() {
+        // Set up event listeners
+        document.getElementById('start-trial-btn')?.addEventListener('click', () => this.startTrial());
+        document.getElementById('pay-now-btn')?.addEventListener('click', () => this.payNow());
+        
+        // Check access on page load
+        this.checkAccess();
+    }
+
+    showPaymentModal() {
+        this.paymentModal.style.display = 'block';
+    }
+
+    closePaymentModal() {
+        this.paymentModal.style.display = 'none';
+    }
+
+    async checkAccess() {
+        // Check local storage first
+        const expiry = localStorage.getItem('subscription_expiry');
+        
+        if (expiry && new Date(expiry) > new Date()) {
+            return; // User has valid access
+        }
+        
+        // Check with server
+        try {
+            const response = await fetch('/api/check-subscription');
+            if (response.ok) {
+                const { hasAccess, expiryDate } = await response.json();
+                if (hasAccess) {
+                    localStorage.setItem('subscription_expiry', expiryDate);
+                    return;
+                }
             }
+        } catch (error) {
+            console.error("Subscription check failed:", error);
         }
-    } catch (error) {
-        console.error("Subscription check failed:", error);
-    }
-    
-    showPaymentModal();
-    */
-}
-
-// Trial/Payment Functions
-async function startTrial() {
-    const email = document.getElementById('user-email').value;
-    if (!email) {
-        alert("Please enter your email");
-        return;
+        
+        // No valid access found
+        this.showPaymentModal();
     }
 
-    try {
-        // For testing - simulate successful trial
-        const expiry = new Date();
-        expiry.setHours(expiry.getHours() + 24);
-        
-        localStorage.setItem('subscription_expiry', expiry.toISOString());
-        localStorage.setItem('user_email', email);
-        
-        alert("1-day free trial activated!");
-        closePaymentModal();
-        window.location.reload();
-        
-        // Actual implementation (uncomment when backend is ready):
-        /*
-        const response = await fetch('/initiate-payment', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
-        });
-        
-        const data = await response.json();
-        if (data.trial_active) {
-            // ... same as test code above ...
+    async startTrial() {
+        const email = document.getElementById('user-email').value;
+        if (!email) {
+            alert("Please enter your email");
+            return;
         }
-        */
-    } catch (error) {
-        console.error("Trial error:", error);
-        alert("Error starting trial. Please try again.");
-    }
-}
 
-async function payNow() {
-    const email = document.getElementById('user-email').value;
-    if (!email) {
-        alert("Please enter your email");
-        return;
-    }
-
-    const payButton = document.getElementById('pay-now-btn');
-    payButton.innerHTML = "Processing...";
-    payButton.disabled = true;
-    
-    try {
-        // TEST MODE - Simulate payment redirect
-        alert("TEST MODE: Would redirect to Monnify payment page");
-        payButton.innerHTML = "Pay Now (₦5,000)";
-        payButton.disabled = false;
-        
-        // Actual implementation (uncomment when backend is ready):
-        /*
-        const response = await fetch('/initiate-payment', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                email,
-                immediate: true 
-            })
-        });
-        
-        const data = await response.json();
-        if (data.responseBody?.checkoutUrl) {
-            localStorage.setItem('user_email', email);
-            window.location.href = data.responseBody.checkoutUrl;
+        try {
+            const response = await fetch('/initiate-trial', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            
+            if (response.ok) {
+                const { expiryDate } = await response.json();
+                localStorage.setItem('subscription_expiry', expiryDate);
+                localStorage.setItem('user_email', email);
+                
+                alert("1-day free trial activated!");
+                this.closePaymentModal();
+                window.location.reload(); // Refresh to apply access
+            } else {
+                alert("Could not start trial. Please try paying instead.");
+            }
+        } catch (error) {
+            console.error("Trial error:", error);
+            alert("Error starting trial. Please try again.");
         }
-        */
-    } catch (error) {
-        console.error("Payment error:", error);
-        alert("An error occurred. Please try again.");
-        payButton.innerHTML = "Pay Now (₦5,000)";
-        payButton.disabled = false;
+    }
+
+    async payNow() {
+        const email = document.getElementById('user-email').value;
+        if (!email) {
+            alert("Please enter your email");
+            return;
+        }
+
+        const payButton = document.getElementById('pay-now-btn');
+        payButton.innerHTML = "Processing...";
+        payButton.disabled = true;
+        
+        try {
+            const response = await fetch('/initiate-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, immediate: true })
+            });
+            
+            const data = await response.json();
+            
+            if (data.checkoutUrl) {
+                localStorage.setItem('user_email', email);
+                window.location.href = data.checkoutUrl;
+            } else {
+                alert("Payment initiation failed. Please try again.");
+            }
+        } catch (error) {
+            console.error("Payment error:", error);
+            alert("An error occurred. Please try again.");
+        } finally {
+            payButton.innerHTML = "Pay Now (₦5,000)";
+            payButton.disabled = false;
+        }
     }
 }
 
-// Initialize payment system
+// Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    // Set up event listeners
-    document.getElementById('start-trial-btn')?.addEventListener('click', startTrial);
-    document.getElementById('pay-now-btn')?.addEventListener('click', payNow);
-    
-    // Check access on page load
-    checkAccess();
+    new PaymentSystem();
 });
 </script>
 
