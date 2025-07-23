@@ -127,36 +127,35 @@ class PaymentSystem {
     }
 
     async startTrial() {
-        const email = localStorage.getItem('user_email') || prompt("Enter your registered email:");
-        if (!email) return;
-
-        const trialBtn = document.getElementById('start-trial-btn');
-        trialBtn.disabled = true;
-        trialBtn.textContent = "Activating...";
-
-        try {
-            const response = await fetch('/initiate-trial', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
-            });
-
-            if (!response.ok) throw await response.json();
-
-            const { expiry_date } = await response.json();
-            localStorage.setItem('subscription_expiry', expiry_date);
-            localStorage.setItem('user_email', email);
-            
-            alert("Free trial activated! Enjoy 24 hours of access.");
-            this.closePaymentModal();
-            window.location.href = "/ar";
-        } catch (error) {
-            alert(error.detail || "Failed to start trial");
-        } finally {
-            trialBtn.disabled = false;
-            trialBtn.textContent = "Start Free Trial";
-        }
-    }
+      const email = localStorage.getItem('user_email') || prompt("Enter your registered email:");
+      if (!email) return;
+  
+      const trialBtn = document.getElementById('start-trial-btn');
+      trialBtn.disabled = true;
+      trialBtn.textContent = "Activating...";
+  
+      try {
+          const response = await fetch('/initiate-trial', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email })
+          });
+  
+          if (!response.ok) throw await response.json();
+  
+          const { expiry_date } = await response.json();
+          localStorage.setItem('subscription_expiry', expiry_date);
+          localStorage.setItem('user_email', email);
+          
+          // Remove alert and directly redirect
+          window.location.href = "/ar"; // Redirect to AR page
+      } catch (error) {
+          alert(error.detail || "Failed to start trial");
+      } finally {
+          trialBtn.disabled = false;
+          trialBtn.textContent = "Start Free Trial";
+      }
+  }
 
     async payNow() {
       const email = localStorage.getItem('user_email') || prompt("Enter your registered email:");
