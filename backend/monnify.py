@@ -92,7 +92,6 @@ async def initiate_payment(request: Request, db: Session = Depends(get_db)):
         
         payload = {
             "amount": AMOUNT,
-            "customerName": "AR Tracer User",
             "customerEmail": email,
             "paymentReference": transaction_ref,
             "paymentDescription": "7-day AR Tracer Subscription",
@@ -102,25 +101,23 @@ async def initiate_payment(request: Request, db: Session = Depends(get_db)):
             "paymentMethods": ["CARD", "ACCOUNT_TRANSFER"]
         }
 
-        # For testing, simulate success
         if TEST_MODE:
             return JSONResponse({
                 "status": "success",
                 "checkoutUrl": f"{BASE_URL}/payment-success?email={email}&reference={transaction_ref}&test=true"
             })
 
-        # Real payment
+        # Real payment (make sure Monnify API is called)
         response = requests.post(
-            "https://sandbox.monnify.com/api/v1/merchant/transactions/init-transaction",
+            "https://api.monnify.com/api/v1/merchant/transactions/init-transaction",
             json=payload,
             headers={"Authorization": f"Basic {get_auth_header()}"}
         )
 
         if response.status_code == 200:
             return JSONResponse(response.json())
-            
-        raise HTTPException(status_code=response.status_code, detail=response.text)
-            
+        else:
+            raise HTTPException(status_code=400, detail="Failed to initiate payment")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
