@@ -159,32 +159,35 @@ class PaymentSystem {
     }
 
     async payNow() {
-        const email = localStorage.getItem('user_email') || prompt("Enter your registered email:");
-        if (!email) return;
-
-        const payBtn = document.getElementById('pay-now-btn');
-        payBtn.disabled = true;
-        payBtn.textContent = "Processing...";
-
-        try {
-            const response = await fetch('/initiate-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
-            });
-
-            if (!response.ok) throw await response.json();
-
-            const { checkoutUrl } = await response.json();
-            window.location.href = checkoutUrl;
-        } catch (error) {
-            alert(error.detail || "Payment initiation failed");
-        } finally {
-            payBtn.disabled = false;
-            payBtn.textContent = "Pay Now (₦500)";
-        }
-    }
-
+      const email = localStorage.getItem('user_email') || prompt("Enter your registered email:");
+      if (!email) return;
+  
+      const payBtn = document.getElementById('pay-now-btn');
+      payBtn.disabled = true;
+      payBtn.textContent = "Processing...";
+  
+      try {
+          const response = await fetch('/initiate-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email })
+          });
+  
+          if (!response.ok) throw await response.json();
+  
+          const result = await response.json();
+          if (result.checkoutUrl) {
+              window.location.href = result.checkoutUrl; // Redirect to Monnify
+          } else {
+              throw new Error("No checkout URL received");
+          }
+      } catch (error) {
+          alert(error.detail || "Payment initiation failed");
+      } finally {
+          payBtn.disabled = false;
+          payBtn.textContent = "Pay Now (₦500)";
+      }
+  }
     handlePaymentResult() {
         const urlParams = new URLSearchParams(window.location.search);
         const paymentStatus = urlParams.get('payment');
