@@ -48,6 +48,37 @@ app.add_middleware(
 # Database init
 init_db()
 
+# ======== ADD THESE LINES ======== #
+def initialize_data():
+    """Create tables and add test data if empty"""
+    from backend.models import Base
+    from sqlalchemy import create_engine
+    
+    # 1. Force-create all tables
+    engine = create_engine(os.getenv("DATABASE_URL"))
+    Base.metadata.create_all(bind=engine)
+    
+    # 2. Optional: Add test user if none exists
+    db = SessionLocal()
+    try:
+        if not db.query(User).first():
+            test_user = User(
+                fullname="Test User",
+                email="test@example.com",
+                hashed_password=hash_password("test123"),
+                phone="08012345678",
+                is_first_login=True,
+                used_trial=False
+            )
+            db.add(test_user)
+            db.commit()
+            print("✅ Created test user")
+    except Exception as e:
+        print(f"❌ Initialization error: {e}")
+    finally:
+        db.close()
+
+
 # Database dependency
 def get_db():
     db = SessionLocal()
