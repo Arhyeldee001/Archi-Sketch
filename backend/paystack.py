@@ -142,6 +142,7 @@ async def verify_payment(
         )
         
         if verify_response.status_code != 200:
+            print(f"Paystack verification failed for reference {payment_ref}")
             raise HTTPException(status_code=400, detail="Payment verification failed")
         
         payment_data = verify_response.json()
@@ -149,23 +150,45 @@ async def verify_payment(
             # Grant 7-day access
             expiry_date = datetime.now() + timedelta(days=7)
             
-            # Update user subscription
+            # Get or create user
             user = db.query(User).filter(User.email == email).first()
-            if user:
-                subscription = Subscription(
-                    user_email=email,
-                    expiry_date=expiry_date,
-                    is_trial=False,
-                    amount_paid=WEEKLY_SUBSCRIPTION_AMOUNT/100  # Convert back to Naira
-                )
-                db.add(subscription)
-                db.commit()
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+            
+            # Create new subscription
+            subscription = Subscription(
+                user_id=user.id,
+                user_email=email,
+                expiry_date=expiry_date,
+                is_trial=False,
+                amount_paid=5000,  # ₦5000 in Naira (not kobo)
+                payment_reference=payment_ref,
+                is_active=True
+            )
+            db.add(subscription)
+            
+            # Update user's last subscription date
+            user.last_subscription_date = datetime.now()
+            user.used_trial = True  # If you want to mark trial as used
+            
+            db.commit()
+            
+            # Log successful subscription
+            print(f"""
+            🟢 NEW SUBSCRIPTION CREATED
+            User: {email} (ID: {user.id})
+            Amount: ₦{5000}
+            Expires: {expiry_date}
+            Reference: {payment_ref}
+            """)
             
             return RedirectResponse(url="/ar?payment=success")
         
         raise HTTPException(status_code=400, detail="Payment not completed")
     
     except Exception as e:
+        db.rollback()
+        print(f"🔴 Payment verification error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/check-subscription")
