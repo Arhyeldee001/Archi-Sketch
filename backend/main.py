@@ -161,45 +161,33 @@ async def debug_static_files():
 # ===== Auth Endpoints ===== #
 # ===== Auth Endpoints ===== #
 @app.post("/api/login")
+@app.post("/api/login")
 def login(response: Response, payload: AuthData, db: Session = Depends(get_db)):
     user = login_user(db, payload.email, payload.password)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    # Create redirect response
-    if user.is_first_login:
-        redirect_url = f"/onboarding?user_id={user.id}"
-    else:
-        redirect_url = "/dashboard.html"
-    
-    # Set cookies in response
+
     response = JSONResponse({
         "message": "Login successful",
-        "redirect_to": redirect_url,
+        "redirect_to": f"/onboarding?user_id={user.id}" if user.is_first_login else "/dashboard.html",
         "user_id": str(user.id),
         "email": user.email
     })
     
-    response.set_cookie(
-        key="session_token",
-        value=f"session_{user.id}",
-        max_age=31536000,
-        httponly=True,
-        secure=True,
-        samesite='lax',
-        path='/'
-    )
-    
-    # ADD THIS - Set email cookie for middleware access
-    response.set_cookie(
-        key="user_email",
-        value=user.email,
-        max_age=31536000,
-        httponly=True,
-        secure=True,
-        samesite='lax',
-        path='/'
-    )
+    # Set cookies with explicit paths
+    for name, value in [
+        ("session_token", f"session_{user.id}"),
+        ("user_email", user.email)
+    ]:
+        response.set_cookie(
+            key=name,
+            value=value,
+            max_age=31536000,
+            httponly=True,
+            secure=True,
+            samesite='Lax',  # Capital 'Lax' works more reliably
+            path='/'  # Explicitly set to root path
+        )
     
     return response
     
@@ -315,36 +303,32 @@ async def check_access(db: Session = Depends(get_db)):
 @app.middleware("http")
 async def check_subscription_middleware(request: Request, call_next):
     # Skip check for public routes
-    if request.url.path in ["/login", "/api/login", "/api/register"]:
+    if request.url.path in ["/login", "/api/login", "/api/register", "/payment-required"]:
         return await call_next(request)
     
-    # For AR routes
+    # For protected routes
+    session_token = request.cookies.get("session_token")
+    user_email = request.cookies.get("user_email") or request.query_params.get("email")
+    
+    if not (session_token and user_email):
+        return RedirectResponse(url="/login")
+    
+    # Additional check for AR routes only
     if request.url.path.startswith("/ar"):
         try:
-            # Get email from either query params or cookies
-            email = request.query_params.get("email") or \
-                   request.cookies.get("user_email")
-            
-            if not email:
-                return RedirectResponse(url="/login")
-            
-            # Verify subscription
             db = SessionLocal()
-            try:
-                active_sub = db.query(Subscription).filter(
-                    Subscription.user_email == email,
-                    Subscription.expiry_date > datetime.now()
-                ).first()
-                
-                if not active_sub:
-                    return RedirectResponse(url="/payment-required")
-            finally:
-                db.close()
-        except Exception as e:
-            print(f"Middleware error: {str(e)}")
-            return RedirectResponse(url="/login")
+            active_sub = db.query(Subscription).filter(
+                Subscription.user_email == user_email,
+                Subscription.expiry_date > datetime.now()
+            ).first()
+            
+            if not active_sub:
+                return RedirectResponse(url="/payment-required")
+        finally:
+            db.close()
     
     return await call_next(request)
+    
 # ===== AR Experience ===== #
 @app.get("/ar", response_class=HTMLResponse)
 def ar_viewer(request: Request):
@@ -372,6 +356,7 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
