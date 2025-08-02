@@ -275,6 +275,33 @@ def onboarding(request: Request):
         "user_id": user_id
     })
 
+@app.get("/api/check-access")
+async def check_access(db: Session = Depends(get_db)):
+    """Endpoint to verify if user has active subscription"""
+    try:
+        # Get email from localStorage via frontend
+        email = request.query_params.get("email")
+        if not email:
+            return {"has_access": False, "reason": "Email required"}
+        
+        # Check for active subscription
+        active_sub = db.query(Subscription).filter(
+            Subscription.user_email == email,
+            Subscription.expiry_date > datetime.now(),
+            Subscription.is_active == True
+        ).first()
+        
+        if active_sub:
+            return {
+                "has_access": True,
+                "expiry": active_sub.expiry_date.isoformat()
+            }
+        
+        return {"has_access": False, "reason": "No active subscription"}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ===== AR Experience ===== #
 @app.get("/ar", response_class=HTMLResponse)
 def ar_viewer(request: Request):
@@ -302,5 +329,6 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
