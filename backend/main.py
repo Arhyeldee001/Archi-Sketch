@@ -252,6 +252,14 @@ def dashboard(request: Request):
         return RedirectResponse(url="/login")
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
+@app.get("/dashboard.html", response_class=HTMLResponse)
+def tutorials(request: Request):
+    """Tutorials route"""
+    if not request.cookies.get("session_token"):
+        return RedirectResponse(url="/tutorials")
+    return templates.TemplateResponse("tutorials.html", {"request": request})
+
+
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
     """Login page with onboarding success message"""
@@ -373,6 +381,7 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
