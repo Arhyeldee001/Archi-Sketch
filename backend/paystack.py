@@ -170,26 +170,22 @@ async def verify_payment(
 
 @router.get("/check-subscription")
 async def check_subscription(email: str, db: Session = Depends(get_db)):
-    """Check if user has active subscription"""
+    """Check if user has active subscription (even after logout)"""
     try:
-        user = db.query(User).filter(User.email == email).first()
-        if not user:
-            return JSONResponse({"has_access": False, "reason": "User not found"})
-        
-        # Check for active subscription
+        # Find the MOST RECENT valid subscription
         active_sub = db.query(Subscription).filter(
             Subscription.user_email == email,
             Subscription.expiry_date > datetime.now()
-        ).first()
-        
+        ).order_by(Subscription.expiry_date.desc()).first()
+
         if active_sub:
-            return JSONResponse({
+            return {
                 "has_access": True,
                 "expiry": active_sub.expiry_date.isoformat(),
                 "is_trial": active_sub.is_trial
-            })
+            }
         
-        return JSONResponse({"has_access": False, "reason": "No active subscription"})
+        return {"has_access": False, "reason": "No active subscription"}
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
