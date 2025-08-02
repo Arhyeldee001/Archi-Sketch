@@ -299,6 +299,9 @@ class PaymentSystem {
         const email = urlParams.get('email') || localStorage.getItem('user_email');
         
         if (paymentStatus === 'success') {
+            // Full page reload with both email and payment status
+            window.location.href = `/ar?email=${encodeURIComponent(email)}&payment=success`;
+        }
             // Clear payment param but keep email
             window.history.replaceState({}, document.title, `/ar?email=${encodeURIComponent(email)}`);
             
@@ -325,6 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
 
 
 
