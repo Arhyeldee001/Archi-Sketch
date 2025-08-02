@@ -302,18 +302,23 @@ async def check_access(db: Session = Depends(get_db)):
 
 @app.middleware("http")
 async def check_subscription_middleware(request: Request, call_next):
-    # Skip check for public routes
-    if request.url.path in ["/", "/login", "/api/login", "/api/register", "/payment-required"]:
+    # Public routes
+    PUBLIC_ROUTES = [
+        "/", "/login", "/api/login", "/api/register",
+        "/payment", "/payment-success", "/static"
+    ]
+    
+    if request.url.path in PUBLIC_ROUTES:
         return await call_next(request)
     
-    # For protected routes
+    # Verify authentication
     session_token = request.cookies.get("session_token")
     user_email = request.cookies.get("user_email") or request.query_params.get("email")
     
     if not (session_token and user_email):
         return RedirectResponse(url="/login")
     
-    # Additional check for AR routes
+    # AR route specific checks
     if request.url.path.startswith("/ar"):
         db = SessionLocal()
         try:
@@ -323,16 +328,24 @@ async def check_subscription_middleware(request: Request, call_next):
             ).first()
             
             if not active_sub:
-                return RedirectResponse(url="/payment-required")
+                return RedirectResponse(url="/payment")
         except Exception as e:
-            db.rollback()
             print(f"Subscription check error: {str(e)}")
-            return RedirectResponse(url="/login")
+            return RedirectResponse(url="/payment")
         finally:
             db.close()
     
     return await call_next(request)
-    
+
+@app.get("/payment")
+async def payment_page(request: Request):
+    return templates.TemplateResponse("payment.html", {"request": request})
+
+@app.get("/payment-success")
+async def payment_success():
+    return RedirectResponse(url="/ar?payment=success")
+
+
 # ===== AR Experience ===== #
 @app.get("/ar", response_class=HTMLResponse)
 def ar_viewer(request: Request):
@@ -360,6 +373,7 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
