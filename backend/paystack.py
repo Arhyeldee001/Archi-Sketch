@@ -13,7 +13,7 @@ router = APIRouter()
 # Paystack configuration
 PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY")
 BASE_URL = os.getenv("BASE_URL")  # Your frontend URL (e.g., "https://yourdomain.com")
-WEEKLY_SUBSCRIPTION_AMOUNT = 5000  # 5000 Naira in kobo (₦5,000)
+WEEKLY_SUBSCRIPTION_AMOUNT = 100 * 200  # 20000 Naira in kobo (₦20,000)
 TRIAL_DURATION_HOURS = 24  # 1 day trial
 
 def get_db():
@@ -161,7 +161,7 @@ async def verify_payment(
                 user_email=email,
                 expiry_date=expiry_date,
                 is_trial=False,
-                amount_paid=5000,  # ₦5000 in Naira (not kobo)
+                amount_paid=200,  # ₦5000 in Naira (not kobo)
                 payment_reference=payment_ref,
                 is_active=True
             )
