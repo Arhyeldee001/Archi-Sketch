@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from pathlib import Path
 from pydantic import BaseModel
 from backend.db import SessionLocal, init_db
-from backend.models import User
+from backend.models import User, Subscription
 from backend.utils import hash_password
 from backend.auth import register_user, login_user
 from backend import models
@@ -303,7 +303,7 @@ async def check_access(db: Session = Depends(get_db)):
 @app.middleware("http")
 async def check_subscription_middleware(request: Request, call_next):
     # Skip check for public routes
-    if request.url.path in ["/login", "/api/login", "/api/register", "/payment-required"]:
+    if request.url.path in ["/", "/login", "/api/login", "/api/register", "/payment-required"]:
         return await call_next(request)
     
     # For protected routes
@@ -313,10 +313,10 @@ async def check_subscription_middleware(request: Request, call_next):
     if not (session_token and user_email):
         return RedirectResponse(url="/login")
     
-    # Additional check for AR routes only
+    # Additional check for AR routes
     if request.url.path.startswith("/ar"):
+        db = SessionLocal()
         try:
-            db = SessionLocal()
             active_sub = db.query(Subscription).filter(
                 Subscription.user_email == user_email,
                 Subscription.expiry_date > datetime.now()
@@ -324,6 +324,10 @@ async def check_subscription_middleware(request: Request, call_next):
             
             if not active_sub:
                 return RedirectResponse(url="/payment-required")
+        except Exception as e:
+            db.rollback()
+            print(f"Subscription check error: {str(e)}")
+            return RedirectResponse(url="/login")
         finally:
             db.close()
     
@@ -356,6 +360,7 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
