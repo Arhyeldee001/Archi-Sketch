@@ -104,19 +104,19 @@ class PaymentSystem {
 
     async checkAccess() {
       try {
-          const email = localStorage.getItem('user_email');
-          if (!email) {
-              this.showPaymentModal();
-              return;
-          }
+          const email = localStorage.getItem('user_email') || 
+                       prompt("Please enter your email to continue:");
+          
+          if (!email) return;
   
           const response = await fetch(`/check-subscription?email=${email}`);
           const { has_access, expiry } = await response.json();
           
           if (has_access) {
+              localStorage.setItem('user_email', email);
               localStorage.setItem('subscription_expiry', expiry);
-              this.closePaymentModal();  // Hide modal if access exists
-              this.enableARFeatures();  // Enable AR features
+              this.closePaymentModal();
+              this.enableARFeatures();
           } else {
               this.showPaymentModal();
           }
@@ -253,5 +253,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
 
 
