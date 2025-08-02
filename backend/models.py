@@ -18,7 +18,7 @@ class User(Base):
     last_subscription_date = Column(DateTime)
     
     # Relationships would be added here if using them
-    # subscriptions = relationship("Subscription", back_populates="user")
+    subscriptions = relationship("Subscription", back_populates="user")
 
 class Subscription(Base):
     __tablename__ = "subscriptions"
@@ -32,3 +32,6 @@ class Subscription(Base):
     payment_reference = Column(String(100))
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
+
+     # Establish relationship with User
+    user = relationship("User", back_populates="subscriptions")
