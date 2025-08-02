@@ -302,6 +302,35 @@ async def check_access(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.middleware("http")
+async def check_subscription_middleware(request: Request, call_next):
+    # Skip check for public routes
+    if request.url.path in ["/login", "/api/login", "/api/register"]:
+        return await call_next(request)
+    
+    # For AR routes
+    if request.url.path.startswith("/ar"):
+        email = request.query_params.get("email") or \
+               (await request.json()).get("email", None)
+        
+        if not email:
+            return RedirectResponse(url="/login")
+        
+        # Verify subscription
+        db = SessionLocal()
+        try:
+            active_sub = db.query(Subscription).filter(
+                Subscription.user_email == email,
+                Subscription.expiry_date > datetime.now()
+            ).first()
+            
+            if not active_sub:
+                return RedirectResponse(url="/payment-required")
+        finally:
+            db.close()
+    
+    return await call_next(request)
+
 # ===== AR Experience ===== #
 @app.get("/ar", response_class=HTMLResponse)
 def ar_viewer(request: Request):
@@ -329,6 +358,7 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
