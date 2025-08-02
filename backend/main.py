@@ -160,6 +160,7 @@ async def debug_static_files():
     }
 
 # ===== Auth Endpoints ===== #
+# ===== Auth Endpoints ===== #
 @app.post("/api/login")
 def login(response: Response, payload: AuthData, db: Session = Depends(get_db)):
     user = login_user(db, payload.email, payload.password)
@@ -176,7 +177,8 @@ def login(response: Response, payload: AuthData, db: Session = Depends(get_db)):
     response = JSONResponse({
         "message": "Login successful",
         "redirect_to": redirect_url,
-        "user_id": str(user.id)
+        "user_id": str(user.id),
+        "email": user.email  # <-- Add this line to include email in response
     })
     
     response.set_cookie(
@@ -190,7 +192,7 @@ def login(response: Response, payload: AuthData, db: Session = Depends(get_db)):
     )
     
     return response
-
+    
 @app.post("/api/register")
 def register(user_data: UserRegistration, db: Session = Depends(get_db)):
     hashed_password = hash_password(user_data.password)
@@ -300,4 +302,5 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
