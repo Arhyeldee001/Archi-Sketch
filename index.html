@@ -92,7 +92,14 @@ class PaymentSystem {
     }
 
     async init() {
-        // First verify access
+        // First check if we have an email from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const emailFromUrl = urlParams.get('email');
+        if (emailFromUrl) {
+            localStorage.setItem('user_email', emailFromUrl);
+        }
+
+        // Then verify access
         await this.checkAccess();
         
         // Setup buttons
@@ -105,21 +112,24 @@ class PaymentSystem {
 
     async checkAccess() {
         try {
-            // Get email from localStorage, form input, or prompt
+            // Get email from localStorage or form input
             let email = localStorage.getItem('user_email') || 
-                       (this.userEmailInput?.value) ||
-                       prompt("Please enter your registered email:");
+                       (this.userEmailInput?.value);
             
+            // If still no email, prompt user
             if (!email) {
-                this.showPaymentModal();
-                return;
+                email = prompt("Please enter your registered email:");
+                if (!email) {
+                    this.showPaymentModal();
+                    return;
+                }
             }
 
             // Verify access with backend
             const response = await fetch(`/check-subscription?email=${encodeURIComponent(email)}`);
             
             if (!response.ok) {
-                throw new Error(await response.text());
+                throw new Error("Access check failed");
             }
 
             const { has_access, expiry, is_trial } = await response.json();
@@ -163,7 +173,6 @@ class PaymentSystem {
         const uploadBtn = document.getElementById('upload');
         if (uploadBtn) uploadBtn.disabled = false;
         
-        // Add any other AR feature enabling logic here
         console.log("AR features enabled");
     }
 
@@ -185,7 +194,6 @@ class PaymentSystem {
         msgElement.style.padding = '10px 20px';
         msgElement.style.borderRadius = '5px';
         msgElement.style.zIndex = '10000';
-        msgElement.style.transition = 'opacity 0.5s ease';
         document.body.appendChild(msgElement);
         
         // Auto-hide after 3 seconds
@@ -226,9 +234,8 @@ class PaymentSystem {
             localStorage.setItem('user_email', email);
             localStorage.setItem('subscription_expiry', expiry_date);
             
-            // Show success and refresh
-            this.showAccessMessage("Free trial activated! Enjoy 24 hours of access.");
-            setTimeout(() => window.location.href = "/ar", 1500);
+            // Redirect with email in URL
+            window.location.href = `/ar?email=${encodeURIComponent(email)}`;
             
         } catch (error) {
             console.error("Trial error:", error);
@@ -289,10 +296,11 @@ class PaymentSystem {
     handlePaymentResult() {
         const urlParams = new URLSearchParams(window.location.search);
         const paymentStatus = urlParams.get('payment');
+        const email = urlParams.get('email') || localStorage.getItem('user_email');
         
         if (paymentStatus === 'success') {
-            // Clear URL parameters
-            window.history.replaceState({}, document.title, window.location.pathname);
+            // Clear payment param but keep email
+            window.history.replaceState({}, document.title, `/ar?email=${encodeURIComponent(email)}`);
             
             // Show success message
             this.showAccessMessage("Payment successful! Access granted.");
@@ -307,7 +315,7 @@ class PaymentSystem {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
-    const paymentSystem = new PaymentSystem();
+    new PaymentSystem();
 });
 </script>
   
@@ -317,6 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
 
 
 
