@@ -25,7 +25,8 @@ app = FastAPI()
 # Mount static files and include routers
 app.include_router(paystack_router)
 app.include_router(admin.router)
-
+from backend.db import Base, engine
+Base.metadata.create_all(bind=engine)  # Creates all tables
 # IMPORTANT: Render.com specific static files setup
 static_dir = Path(__file__).parent.parent / "static"
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
@@ -358,6 +359,7 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
