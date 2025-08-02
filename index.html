@@ -87,165 +87,229 @@
 class PaymentSystem {
     constructor() {
         this.paymentModal = document.getElementById('payment-modal');
+        this.userEmailInput = document.getElementById('user-email');
         this.init();
     }
 
-    init() {
-        // Check access on page load
-        this.checkAccess();
+    async init() {
+        // First verify access
+        await this.checkAccess();
         
         // Setup buttons
-        document.getElementById('start-trial-btn').addEventListener('click', () => this.startTrial());
-        document.getElementById('pay-now-btn').addEventListener('click', () => this.payNow());
+        document.getElementById('start-trial-btn')?.addEventListener('click', () => this.startTrial());
+        document.getElementById('pay-now-btn')?.addEventListener('click', () => this.payNow());
         
         // Handle payment success/failure
         this.handlePaymentResult();
     }
 
     async checkAccess() {
-      try {
-          const email = localStorage.getItem('user_email') || 
-                       prompt("Please enter your email to continue:");
-          
-          if (!email) return;
-  
-          const response = await fetch(`/check-subscription?email=${email}`);
-          const { has_access, expiry } = await response.json();
-          
-          if (has_access) {
-              localStorage.setItem('user_email', email);
-              localStorage.setItem('subscription_expiry', expiry);
-              this.closePaymentModal();
-              this.enableARFeatures();
-          } else {
-              this.showPaymentModal();
-          }
-      } catch (error) {
-          console.error("Access check failed:", error);
-          this.showPaymentModal();
-      }
-  }
+        try {
+            // Get email from localStorage, form input, or prompt
+            let email = localStorage.getItem('user_email') || 
+                       (this.userEmailInput?.value) ||
+                       prompt("Please enter your registered email:");
+            
+            if (!email) {
+                this.showPaymentModal();
+                return;
+            }
+
+            // Verify access with backend
+            const response = await fetch(`/check-subscription?email=${encodeURIComponent(email)}`);
+            
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+
+            const { has_access, expiry, is_trial } = await response.json();
+            
+            if (has_access) {
+                // Store user details
+                localStorage.setItem('user_email', email);
+                localStorage.setItem('subscription_expiry', expiry);
+                
+                // Close modal and enable features
+                this.closePaymentModal();
+                this.enableARFeatures();
+                
+                // Show access message
+                this.showAccessMessage(is_trial ? 
+                    "Free trial activated! Enjoy your access." : 
+                    "Premium access active! Enjoy your 7-day subscription.");
+            } else {
+                this.showPaymentModal();
+            }
+        } catch (error) {
+            console.error("Access verification error:", error);
+            this.showPaymentModal();
+        }
+    }
 
     showPaymentModal() {
-        this.paymentModal.style.display = 'block';
+        if (this.paymentModal) {
+            this.paymentModal.style.display = 'block';
+        }
     }
 
     closePaymentModal() {
-        this.paymentModal.style.display = 'none';
+        if (this.paymentModal) {
+            this.paymentModal.style.display = 'none';
+        }
+    }
+
+    enableARFeatures() {
+        // Enable all AR functionality
+        const uploadBtn = document.getElementById('upload');
+        if (uploadBtn) uploadBtn.disabled = false;
+        
+        // Add any other AR feature enabling logic here
+        console.log("AR features enabled");
+    }
+
+    showAccessMessage(message, isError = false) {
+        // Remove any existing messages
+        const oldMsg = document.getElementById('access-status-message');
+        if (oldMsg) oldMsg.remove();
+        
+        // Create and show new message
+        const msgElement = document.createElement('div');
+        msgElement.id = 'access-status-message';
+        msgElement.textContent = message;
+        msgElement.style.position = 'fixed';
+        msgElement.style.top = '20px';
+        msgElement.style.left = '50%';
+        msgElement.style.transform = 'translateX(-50%)';
+        msgElement.style.backgroundColor = isError ? '#f44336' : '#4CAF50';
+        msgElement.style.color = 'white';
+        msgElement.style.padding = '10px 20px';
+        msgElement.style.borderRadius = '5px';
+        msgElement.style.zIndex = '10000';
+        msgElement.style.transition = 'opacity 0.5s ease';
+        document.body.appendChild(msgElement);
+        
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+            msgElement.style.opacity = '0';
+            setTimeout(() => msgElement.remove(), 500);
+        }, 3000);
     }
 
     async startTrial() {
-        const email = document.getElementById('user-email').value || 
+        const email = (this.userEmailInput?.value) || 
                      localStorage.getItem('user_email') || 
-                     prompt("Enter your email:");
+                     prompt("Enter your email to start trial:");
+        
         if (!email) return;
 
         const trialBtn = document.getElementById('start-trial-btn');
-        trialBtn.disabled = true;
-        trialBtn.textContent = "Activating...";
-
         try {
+            if (trialBtn) {
+                trialBtn.disabled = true;
+                trialBtn.textContent = "Activating...";
+            }
+
             const response = await fetch('/initiate-trial', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
             });
 
-            if (!response.ok) throw await response.json();
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || "Trial activation failed");
+            }
 
             const { expiry_date } = await response.json();
-            localStorage.setItem('subscription_expiry', expiry_date);
-            localStorage.setItem('user_email', email);
             
-            // Redirect directly without alert
-            window.location.href = "/ar";
+            // Store user details
+            localStorage.setItem('user_email', email);
+            localStorage.setItem('subscription_expiry', expiry_date);
+            
+            // Show success and refresh
+            this.showAccessMessage("Free trial activated! Enjoy 24 hours of access.");
+            setTimeout(() => window.location.href = "/ar", 1500);
+            
         } catch (error) {
-            alert(error.detail || "Failed to start trial");
+            console.error("Trial error:", error);
+            this.showAccessMessage(error.message || "Failed to start trial", true);
         } finally {
-            trialBtn.disabled = false;
-            trialBtn.textContent = "Start Free Trial";
+            if (trialBtn) {
+                trialBtn.disabled = false;
+                trialBtn.textContent = "Start Free Trial";
+            }
         }
     }
 
     async payNow() {
-        const email = document.getElementById('user-email').value || 
+        const email = (this.userEmailInput?.value) || 
                      localStorage.getItem('user_email') || 
-                     prompt("Enter your email:");
+                     prompt("Enter your email to make payment:");
+        
         if (!email) return;
 
         const payBtn = document.getElementById('pay-now-btn');
-        payBtn.disabled = true;
-        payBtn.textContent = "Processing...";
-
         try {
+            if (payBtn) {
+                payBtn.disabled = true;
+                payBtn.textContent = "Processing...";
+            }
+
             const response = await fetch('/initiate-payment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
             });
 
-            if (!response.ok) throw await response.json();
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || "Payment initiation failed");
+            }
 
             const { payment_url } = await response.json();
-            window.location.href = payment_url; // Redirect to Paystack
+            
+            if (payment_url) {
+                // Redirect to Paystack
+                window.location.href = payment_url;
+            } else {
+                throw new Error("No payment URL received");
+            }
+            
         } catch (error) {
-            alert(error.detail || "Payment initiation failed");
+            console.error("Payment error:", error);
+            this.showAccessMessage(error.message || "Payment failed. Please try again.", true);
         } finally {
-            payBtn.disabled = false;
-            payBtn.textContent = "Pay Now (₦5,000)";
+            if (payBtn) {
+                payBtn.disabled = false;
+                payBtn.textContent = "Pay Now (₦5,000)";
+            }
         }
     }
 
     handlePaymentResult() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const paymentStatus = urlParams.get('payment');
-      
-      if (paymentStatus === 'success') {
-          // 1. Close the payment modal
-          this.closePaymentModal();
-          
-          // 2. Clear the URL parameters (removes ?payment=success)
-          window.history.replaceState({}, document.title, "/ar");
-          
-          // 3. Enable AR app functionality
-          this.enableARFeatures();
-      }
-  }
-  
-  enableARFeatures() {
-      // Hide payment-related UI elements
-      const paymentModal = document.getElementById('payment-modal');
-      if (paymentModal) paymentModal.style.display = 'none';
-      
-      // Enable upload/trace buttons (if they were disabled)
-      const uploadButton = document.getElementById('upload');
-      if (uploadButton) uploadButton.disabled = false;
-      
-      // Optional: Show a success message temporarily
-      const successMsg = document.createElement('div');
-      successMsg.textContent = "Payment successful! Enjoy your AR experience.";
-      successMsg.style.position = 'fixed';
-      successMsg.style.top = '20px';
-      successMsg.style.left = '50%';
-      successMsg.style.transform = 'translateX(-50%)';
-      successMsg.style.backgroundColor = '#4CAF50';
-      successMsg.style.color = 'white';
-      successMsg.style.padding = '10px 20px';
-      successMsg.style.borderRadius = '5px';
-      successMsg.style.zIndex = '1000';
-      document.body.appendChild(successMsg);
-      
-      // Remove message after 3 seconds
-      setTimeout(() => successMsg.remove(), 3000);
-  }
+        const urlParams = new URLSearchParams(window.location.search);
+        const paymentStatus = urlParams.get('payment');
+        
+        if (paymentStatus === 'success') {
+            // Clear URL parameters
+            window.history.replaceState({}, document.title, window.location.pathname);
+            
+            // Show success message
+            this.showAccessMessage("Payment successful! Access granted.");
+            
+            // Force access check
+            this.checkAccess();
+        } else if (paymentStatus === 'failed') {
+            this.showAccessMessage("Payment failed. Please try again.", true);
+        }
+    }
 }
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
-    new PaymentSystem();
+    const paymentSystem = new PaymentSystem();
 });
-</script>    
-
+</script>
   
   <script src="https://cdn.jsdelivr.net/npm/@interactjs/interactjs/index.min.js"></script>
   <script src="/static/script.js"></script>
@@ -253,6 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
 
 
 
