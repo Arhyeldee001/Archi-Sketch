@@ -148,6 +148,12 @@
                     message.textContent = "❌ " + (result.detail || "Login failed");
                     return;
                 }
+        
+                        // ===== ADD THESE 2 LINES ===== //
+                // Store email in localStorage before redirect
+                localStorage.setItem('user_email', data.email);
+                localStorage.setItem('user_id', result.user_id);
+                // ============================= //
 
                 message.textContent = "✅ " + result.message;
                 console.log("Login response:", result);  // Debug log
@@ -206,3 +212,4 @@
     </script>
 </body>
 </html>
+
