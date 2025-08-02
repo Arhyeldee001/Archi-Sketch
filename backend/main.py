@@ -177,15 +177,26 @@ def login(response: Response, payload: AuthData, db: Session = Depends(get_db)):
         "message": "Login successful",
         "redirect_to": redirect_url,
         "user_id": str(user.id),
-        "email": user.email  # <-- Add this line to include email in response
+        "email": user.email
     })
     
     response.set_cookie(
         key="session_token",
         value=f"session_{user.id}",
-        max_age=31536000,  # 1 year
+        max_age=31536000,
         httponly=True,
-        secure=True,  # Must be True in production (HTTPS)
+        secure=True,
+        samesite='lax',
+        path='/'
+    )
+    
+    # ADD THIS - Set email cookie for middleware access
+    response.set_cookie(
+        key="user_email",
+        value=user.email,
+        max_age=31536000,
+        httponly=True,
+        secure=True,
         samesite='lax',
         path='/'
     )
@@ -361,6 +372,7 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
