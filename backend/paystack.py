@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Request, HTTPException, Depends
-from fastapi.responses import JSONResponse, RiniedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 import requests
 import base64
 from backend.db import SessionLocal
@@ -121,7 +121,52 @@ async def initiate_payment(request: Request, db: Session = Depends(get_db)):
     except Exception as e:
         print(f"Error in initiate-payment: {str(e)}")  # Debug log
         raise HTTPException(status_code=500, detail=str(e))
+        
+@router.get("/verify-paystack-payment")
+async def verify_payment(
+    email: str,
+    reference: str = None,
+    trxref: str = None,  # Paystack may use either
+    db: Session = Depends(get_db)
+):
+    try:
+        # Use either reference or trxref
+        payment_ref = reference or trxref
+        if not payment_ref:
+            raise HTTPException(status_code=400, detail="Payment reference required")
 
+        # Verify payment with Paystack
+        verify_response = requests.get(
+            f"https://api.paystack.co/transaction/verify/{payment_ref}",
+            headers=get_paystack_auth_header()
+        )
+        
+        if verify_response.status_code != 200:
+            raise HTTPException(status_code=400, detail="Payment verification failed")
+        
+        payment_data = verify_response.json()
+        if payment_data["data"]["status"] == "success":
+            # Grant 7-day access
+            expiry_date = datetime.now() + timedelta(days=7)
+            
+            # Update user subscription
+            user = db.query(User).filter(User.email == email).first()
+            if user:
+                subscription = Subscription(
+                    user_email=email,
+                    expiry_date=expiry_date,
+                    is_trial=False,
+                    amount_paid=WEEKLY_SUBSCRIPTION_AMOUNT/100  # Convert back to Naira
+                )
+                db.add(subscription)
+                db.commit()
+            
+            return RedirectResponse(url="/ar?payment=success")
+        
+        raise HTTPException(status_code=400, detail="Payment not completed")
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/check-subscription")
 async def check_subscription(email: str, db: Session = Depends(get_db)):
