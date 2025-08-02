@@ -25,9 +25,7 @@ app = FastAPI()
 # Mount static files and include routers
 app.include_router(paystack_router)
 app.include_router(admin.router)
-from backend.db import Base, engine
-Base.metadata.create_all(bind=engine)  # Creates all tables
-# IMPORTANT: Render.com specific static files setup
+
 static_dir = Path(__file__).parent.parent / "static"
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
@@ -311,27 +309,31 @@ async def check_subscription_middleware(request: Request, call_next):
     
     # For AR routes
     if request.url.path.startswith("/ar"):
-        email = request.query_params.get("email") or \
-               (await request.json()).get("email", None)
-        
-        if not email:
-            return RedirectResponse(url="/login")
-        
-        # Verify subscription
-        db = SessionLocal()
         try:
-            active_sub = db.query(Subscription).filter(
-                Subscription.user_email == email,
-                Subscription.expiry_date > datetime.now()
-            ).first()
+            # Get email from either query params or cookies
+            email = request.query_params.get("email") or \
+                   request.cookies.get("user_email")
             
-            if not active_sub:
-                return RedirectResponse(url="/payment-required")
-        finally:
-            db.close()
+            if not email:
+                return RedirectResponse(url="/login")
+            
+            # Verify subscription
+            db = SessionLocal()
+            try:
+                active_sub = db.query(Subscription).filter(
+                    Subscription.user_email == email,
+                    Subscription.expiry_date > datetime.now()
+                ).first()
+                
+                if not active_sub:
+                    return RedirectResponse(url="/payment-required")
+            finally:
+                db.close()
+        except Exception as e:
+            print(f"Middleware error: {str(e)}")
+            return RedirectResponse(url="/login")
     
     return await call_next(request)
-
 # ===== AR Experience ===== #
 @app.get("/ar", response_class=HTMLResponse)
 def ar_viewer(request: Request):
@@ -359,6 +361,7 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
