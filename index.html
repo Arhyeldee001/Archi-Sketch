@@ -61,266 +61,29 @@
     </div>
   </div>
 
-  <!-- Add this modal -->
-  <div id="payment-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; color:white; padding:20px; text-align:center;">
-    <h2>Premium Subscription</h2>
-    <p>Try free for 1 day or subscribe now for full access</p>
+  <script>
+// Simple access check for AR page
+document.addEventListener('DOMContentLoaded', async () => {
+    const email = localStorage.getItem('user_email') || 
+                 new URLSearchParams(window.location.search).get('email');
     
-    <div style="margin: 20px 0;">
-        <input type="email" id="user-email" placeholder="Your email" style="padding:10px; width:300px; font-size:16px;">
-    </div>
+    if (!email) {
+        window.location.href = '/payment';
+        return;
+    }
     
-    <div style="display: flex; gap: 10px; justify-content: center;">
-        <button id="start-trial-btn" style="padding:15px 30px; background:#4CAF50; color:white; border:none; border-radius:5px; font-size:18px; cursor:pointer;">
-            Start Free Trial
-        </button>
-        <button id="pay-now-btn" style="padding:15px 30px; background:#3d5afe; color:white; border:none; border-radius:5px; font-size:18px; cursor:pointer;">
-            Pay Now (₦5,000)
-        </button>
-    </div>
-    
-    <button onclick="closePaymentModal()" style="margin-top:20px; background:transparent; color:#aaa; border:1px solid #aaa; padding:10px 20px;">
-        Cancel
-    </button>
-</div>
-<script>
-class PaymentSystem {
-    constructor() {
-        this.paymentModal = document.getElementById('payment-modal');
-        this.userEmailInput = document.getElementById('user-email');
-        this.init();
-    }
-
-    async init() {
-        // First check if we have an email from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const emailFromUrl = urlParams.get('email');
-        if (emailFromUrl) {
-            localStorage.setItem('user_email', emailFromUrl);
+    // Verify subscription
+    try {
+        const response = await fetch(`/check-subscription?email=${encodeURIComponent(email)}`);
+        if (!response.ok || !(await response.json()).has_access) {
+            window.location.href = '/payment';
         }
-
-        // Then verify access
-        await this.checkAccess();
-        
-        // Setup buttons
-        document.getElementById('start-trial-btn')?.addEventListener('click', () => this.startTrial());
-        document.getElementById('pay-now-btn')?.addEventListener('click', () => this.payNow());
-        
-        // Handle payment success/failure
-        this.handlePaymentResult();
+    } catch {
+        window.location.href = '/payment';
     }
-
-    async checkAccess() {
-        try {
-            // Get email from localStorage or form input
-            let email = localStorage.getItem('user_email') || 
-                       (this.userEmailInput?.value);
-            
-            // If still no email, prompt user
-            if (!email) {
-                email = prompt("Please enter your registered email:");
-                if (!email) {
-                    this.showPaymentModal();
-                    return;
-                }
-            }
-
-            // Verify access with backend
-            const response = await fetch(`/check-subscription?email=${encodeURIComponent(email)}`);
-            
-            if (!response.ok) {
-                throw new Error("Access check failed");
-            }
-
-            const { has_access, expiry, is_trial } = await response.json();
-            
-            if (has_access) {
-                // Store user details
-                localStorage.setItem('user_email', email);
-                localStorage.setItem('subscription_expiry', expiry);
-                
-                // Close modal and enable features
-                this.closePaymentModal();
-                this.enableARFeatures();
-                
-                // Show access message
-                this.showAccessMessage(is_trial ? 
-                    "Free trial activated! Enjoy your access." : 
-                    "Premium access active! Enjoy your 7-day subscription.");
-            } else {
-                this.showPaymentModal();
-            }
-        } catch (error) {
-            console.error("Access verification error:", error);
-            this.showPaymentModal();
-        }
-    }
-
-    showPaymentModal() {
-        if (this.paymentModal) {
-            this.paymentModal.style.display = 'block';
-        }
-    }
-
-    closePaymentModal() {
-        if (this.paymentModal) {
-            this.paymentModal.style.display = 'none';
-        }
-    }
-
-    enableARFeatures() {
-        // Enable all AR functionality
-        const uploadBtn = document.getElementById('upload');
-        if (uploadBtn) uploadBtn.disabled = false;
-        
-        console.log("AR features enabled");
-    }
-
-    showAccessMessage(message, isError = false) {
-        // Remove any existing messages
-        const oldMsg = document.getElementById('access-status-message');
-        if (oldMsg) oldMsg.remove();
-        
-        // Create and show new message
-        const msgElement = document.createElement('div');
-        msgElement.id = 'access-status-message';
-        msgElement.textContent = message;
-        msgElement.style.position = 'fixed';
-        msgElement.style.top = '20px';
-        msgElement.style.left = '50%';
-        msgElement.style.transform = 'translateX(-50%)';
-        msgElement.style.backgroundColor = isError ? '#f44336' : '#4CAF50';
-        msgElement.style.color = 'white';
-        msgElement.style.padding = '10px 20px';
-        msgElement.style.borderRadius = '5px';
-        msgElement.style.zIndex = '10000';
-        document.body.appendChild(msgElement);
-        
-        // Auto-hide after 3 seconds
-        setTimeout(() => {
-            msgElement.style.opacity = '0';
-            setTimeout(() => msgElement.remove(), 500);
-        }, 3000);
-    }
-
-    async startTrial() {
-        const email = (this.userEmailInput?.value) || 
-                     localStorage.getItem('user_email') || 
-                     prompt("Enter your email to start trial:");
-        
-        if (!email) return;
-
-        const trialBtn = document.getElementById('start-trial-btn');
-        try {
-            if (trialBtn) {
-                trialBtn.disabled = true;
-                trialBtn.textContent = "Activating...";
-            }
-
-            const response = await fetch('/initiate-trial', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.detail || "Trial activation failed");
-            }
-
-            const { expiry_date } = await response.json();
-            
-            // Store user details
-            localStorage.setItem('user_email', email);
-            localStorage.setItem('subscription_expiry', expiry_date);
-            
-            // Redirect with email in URL
-            window.location.href = `/ar?email=${encodeURIComponent(email)}`;
-            
-        } catch (error) {
-            console.error("Trial error:", error);
-            this.showAccessMessage(error.message || "Failed to start trial", true);
-        } finally {
-            if (trialBtn) {
-                trialBtn.disabled = false;
-                trialBtn.textContent = "Start Free Trial";
-            }
-        }
-    }
-
-    async payNow() {
-        const email = (this.userEmailInput?.value) || 
-                     localStorage.getItem('user_email') || 
-                     prompt("Enter your email to make payment:");
-        
-        if (!email) return;
-
-        const payBtn = document.getElementById('pay-now-btn');
-        try {
-            if (payBtn) {
-                payBtn.disabled = true;
-                payBtn.textContent = "Processing...";
-            }
-
-            const response = await fetch('/initiate-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.detail || "Payment initiation failed");
-            }
-
-            const { payment_url } = await response.json();
-            
-            if (payment_url) {
-                // Redirect to Paystack
-                window.location.href = payment_url;
-            } else {
-                throw new Error("No payment URL received");
-            }
-            
-        } catch (error) {
-            console.error("Payment error:", error);
-            this.showAccessMessage(error.message || "Payment failed. Please try again.", true);
-        } finally {
-            if (payBtn) {
-                payBtn.disabled = false;
-                payBtn.textContent = "Pay Now (₦5,000)";
-            }
-        }
-    }
-
-    handlePaymentResult() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const paymentStatus = urlParams.get('payment');
-        const email = urlParams.get('email') || localStorage.getItem('user_email');
-        
-        if (paymentStatus === 'success') {
-            // Full page reload with both email and payment status
-            window.location.href = `/ar?email=${encodeURIComponent(email)}&payment=success`;
-        }
-            // Clear payment param but keep email
-            window.history.replaceState({}, document.title, `/ar?email=${encodeURIComponent(email)}`);
-            
-            // Show success message
-            this.showAccessMessage("Payment successful! Access granted.");
-            
-            // Force access check
-            this.checkAccess();
-        } else if (paymentStatus === 'failed') {
-            this.showAccessMessage("Payment failed. Please try again.", true);
-        }
-    }
-}
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', () => {
-    new PaymentSystem();
 });
 </script>
+
   
   <script src="https://cdn.jsdelivr.net/npm/@interactjs/interactjs/index.min.js"></script>
   <script src="/static/script.js"></script>
@@ -328,6 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
 
 
 
