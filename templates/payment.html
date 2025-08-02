@@ -1,281 +1,220 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Subscribe - AR Tracer</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 2rem;
+            background: #f5f5f5;
         }
-        .payment-options {
-            display: flex;
-            gap: 20px;
-            margin-top: 30px;
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .plan-option {
+            border: 1px solid #ddd;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .plan-option:hover {
+            border-color: #3d5afe;
+            background: #f8f9ff;
+        }
+        #user-email {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 1rem;
+            font-size: 16px;
         }
         button {
-            padding: 15px 30px;
+            background: #3d5afe;
+            color: white;
+            border: none;
+            padding: 12px 24px;
             font-size: 16px;
+            border-radius: 6px;
             cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #2c4bff;
         }
         #status-message {
-            margin-top: 20px;
-            padding: 10px;
-            border-radius: 5px;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
         }
     </style>
 </head>
 <body>
-    <h1>Get Premium Access</h1>
-    
-    <div>
-        <input type="email" id="user-email" placeholder="Your email" required>
+    <div class="container">
+        <h1>Choose Your Plan</h1>
+        
+        <input type="email" id="user-email" placeholder="your@email.com" required>
+        
+        <div class="plan-option" onclick="selectPlan('trial')">
+            <h3>24-Hour Free Trial</h3>
+            <p>Experience all features for 1 day</p>
+        </div>
+        
+        <div class="plan-option" onclick="selectPlan('premium')">
+            <h3>Premium Weekly Access</h3>
+            <p>₦5,000 - Full features for 7 days</p>
+        </div>
+        
+        <button id="confirm-btn" style="display:none;">Continue</button>
+        
+        <div id="status-message"></div>
     </div>
-
-    <div class="payment-options">
-        <button id="start-trial-btn">Start Free Trial (24h)</button>
-        <button id="pay-now-btn">Subscribe Now (₦5,000/week)</button>
-    </div>
-
-    <div id="status-message"></div>
 
     <script>
         class PaymentSystem {
             constructor() {
-                this.paymentModal = document.getElementById('payment-modal');
-                this.userEmailInput = document.getElementById('user-email');
-                this.init();
-            }
-        
-            async init() {
-                // First check if we have an email from URL
+                this.selectedPlan = null;
+                this.emailInput = document.getElementById('user-email');
+                this.confirmBtn = document.getElementById('confirm-btn');
+                this.statusEl = document.getElementById('status-message');
+                
+                // Initialize with email if available
                 const urlParams = new URLSearchParams(window.location.search);
-                const emailFromUrl = urlParams.get('email');
-                if (emailFromUrl) {
-                    localStorage.setItem('user_email', emailFromUrl);
-                }
-        
-                // Then verify access
-                await this.checkAccess();
+                const email = urlParams.get('email') || localStorage.getItem('user_email');
+                if (email) this.emailInput.value = email;
                 
-                // Setup buttons
-                document.getElementById('start-trial-btn')?.addEventListener('click', () => this.startTrial());
-                document.getElementById('pay-now-btn')?.addEventListener('click', () => this.payNow());
-                
-                // Handle payment success/failure
+                this.setupEvents();
                 this.handlePaymentResult();
             }
-        
-            async checkAccess() {
-                try {
-                    // Get email from localStorage or form input
-                    let email = localStorage.getItem('user_email') || 
-                               (this.userEmailInput?.value);
-                    
-                    // If still no email, prompt user
-                    if (!email) {
-                        email = prompt("Please enter your registered email:");
-                        if (!email) {
-                            this.showPaymentModal();
-                            return;
-                        }
-                    }
-        
-                    // Verify access with backend
-                    const response = await fetch(`/check-subscription?email=${encodeURIComponent(email)}`);
-                    
-                    if (!response.ok) {
-                        throw new Error("Access check failed");
-                    }
-        
-                    const { has_access, expiry, is_trial } = await response.json();
-                    
-                    if (has_access) {
-                        // Store user details
-                        localStorage.setItem('user_email', email);
-                        localStorage.setItem('subscription_expiry', expiry);
-                        
-                        // Close modal and enable features
-                        this.closePaymentModal();
-                        this.enableARFeatures();
-                        
-                        // Show access message
-                        this.showAccessMessage(is_trial ? 
-                            "Free trial activated! Enjoy your access." : 
-                            "Premium access active! Enjoy your 7-day subscription.");
+            
+            setupEvents() {
+                this.confirmBtn.addEventListener('click', () => {
+                    if (this.selectedPlan === 'trial') {
+                        this.startTrial();
                     } else {
-                        this.showPaymentModal();
+                        this.payNow();
                     }
-                } catch (error) {
-                    console.error("Access verification error:", error);
-                    this.showPaymentModal();
-                }
+                });
             }
-        
-            showPaymentModal() {
-                if (this.paymentModal) {
-                    this.paymentModal.style.display = 'block';
-                }
+            
+            selectPlan(plan) {
+                this.selectedPlan = plan;
+                this.confirmBtn.style.display = 'block';
+                this.confirmBtn.textContent = plan === 'trial' 
+                    ? "Start Free Trial" 
+                    : "Pay Now (₦5,000)";
             }
-        
-            closePaymentModal() {
-                if (this.paymentModal) {
-                    this.paymentModal.style.display = 'none';
-                }
-            }
-        
-            enableARFeatures() {
-                // Enable all AR functionality
-                const uploadBtn = document.getElementById('upload');
-                if (uploadBtn) uploadBtn.disabled = false;
-                
-                console.log("AR features enabled");
-            }
-        
-            showAccessMessage(message, isError = false) {
-                // Remove any existing messages
-                const oldMsg = document.getElementById('access-status-message');
-                if (oldMsg) oldMsg.remove();
-                
-                // Create and show new message
-                const msgElement = document.createElement('div');
-                msgElement.id = 'access-status-message';
-                msgElement.textContent = message;
-                msgElement.style.position = 'fixed';
-                msgElement.style.top = '20px';
-                msgElement.style.left = '50%';
-                msgElement.style.transform = 'translateX(-50%)';
-                msgElement.style.backgroundColor = isError ? '#f44336' : '#4CAF50';
-                msgElement.style.color = 'white';
-                msgElement.style.padding = '10px 20px';
-                msgElement.style.borderRadius = '5px';
-                msgElement.style.zIndex = '10000';
-                document.body.appendChild(msgElement);
-                
-                // Auto-hide after 3 seconds
-                setTimeout(() => {
-                    msgElement.style.opacity = '0';
-                    setTimeout(() => msgElement.remove(), 500);
-                }, 3000);
-            }
-        
+            
             async startTrial() {
-                const email = (this.userEmailInput?.value) || 
-                             localStorage.getItem('user_email') || 
-                             prompt("Enter your email to start trial:");
+                const email = this.emailInput.value;
+                if (!email) return this.showMessage("Please enter your email", "error");
                 
-                if (!email) return;
-        
-                const trialBtn = document.getElementById('start-trial-btn');
+                this.confirmBtn.disabled = true;
+                
                 try {
-                    if (trialBtn) {
-                        trialBtn.disabled = true;
-                        trialBtn.textContent = "Activating...";
-                    }
-        
                     const response = await fetch('/initiate-trial', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ email })
                     });
-        
-                    if (!response.ok) {
-                        const error = await response.json();
-                        throw new Error(error.detail || "Trial activation failed");
-                    }
-        
+                    
+                    if (!response.ok) throw await response.json();
+                    
                     const { expiry_date } = await response.json();
-                    
-                    // Store user details
                     localStorage.setItem('user_email', email);
-                    localStorage.setItem('subscription_expiry', expiry_date);
+                    this.showMessage("Trial activated! Redirecting...", "success");
                     
-                    // Redirect with email in URL
-                    window.location.href = `/ar?email=${encodeURIComponent(email)}`;
+                    setTimeout(() => {
+                        window.location.href = `/ar?email=${encodeURIComponent(email)}`;
+                    }, 1500);
                     
                 } catch (error) {
-                    console.error("Trial error:", error);
-                    this.showAccessMessage(error.message || "Failed to start trial", true);
+                    this.showMessage(error.detail || "Trial activation failed", "error");
                 } finally {
-                    if (trialBtn) {
-                        trialBtn.disabled = false;
-                        trialBtn.textContent = "Start Free Trial";
-                    }
+                    this.confirmBtn.disabled = false;
                 }
             }
-        
+            
             async payNow() {
-                const email = (this.userEmailInput?.value) || 
-                             localStorage.getItem('user_email') || 
-                             prompt("Enter your email to make payment:");
+                const email = this.emailInput.value;
+                if (!email) return this.showMessage("Please enter your email", "error");
                 
-                if (!email) return;
-        
-                const payBtn = document.getElementById('pay-now-btn');
+                this.confirmBtn.disabled = true;
+                
                 try {
-                    if (payBtn) {
-                        payBtn.disabled = true;
-                        payBtn.textContent = "Processing...";
-                    }
-        
                     const response = await fetch('/initiate-payment', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ email })
                     });
-        
-                    if (!response.ok) {
-                        const error = await response.json();
-                        throw new Error(error.detail || "Payment initiation failed");
-                    }
-        
-                    const { payment_url } = await response.json();
                     
-                    if (payment_url) {
-                        // Redirect to Paystack
-                        window.location.href = payment_url;
-                    } else {
-                        throw new Error("No payment URL received");
-                    }
+                    if (!response.ok) throw await response.json();
+                    
+                    const { payment_url } = await response.json();
+                    window.location.href = payment_url;
                     
                 } catch (error) {
-                    console.error("Payment error:", error);
-                    this.showAccessMessage(error.message || "Payment failed. Please try again.", true);
+                    this.showMessage(error.detail || "Payment initiation failed", "error");
                 } finally {
-                    if (payBtn) {
-                        payBtn.disabled = false;
-                        payBtn.textContent = "Pay Now (₦5,000)";
-                    }
+                    this.confirmBtn.disabled = false;
                 }
             }
-        
+            
             handlePaymentResult() {
                 const urlParams = new URLSearchParams(window.location.search);
-                const paymentStatus = urlParams.get('payment');
-                const email = urlParams.get('email') || localStorage.getItem('user_email');
+                const status = urlParams.get('payment');
                 
-                if (paymentStatus === 'success') {
-                    // Full page reload with both email and payment status
-                    window.location.href = `/ar?email=${encodeURIComponent(email)}&payment=success`;
+                if (status === 'success') {
+                    this.showMessage("Payment successful! Redirecting...", "success");
+                    setTimeout(() => {
+                        window.location.href = `/ar?email=${encodeURIComponent(localStorage.getItem('user_email'))}`;
+                    }, 1500);
+                } else if (status === 'failed') {
+                    this.showMessage("Payment failed. Please try again.", "error");
                 }
-                    // Clear payment param but keep email
-                    window.history.replaceState({}, document.title, `/ar?email=${encodeURIComponent(email)}`);
-                    
-                    // Show success message
-                    this.showAccessMessage("Payment successful! Access granted.");
-                    
-                    // Force access check
-                    this.checkAccess();
-                } else if (paymentStatus === 'failed') {
-                    this.showAccessMessage("Payment failed. Please try again.", true);
-                }
+            }
+            
+            showMessage(text, type) {
+                this.statusEl.textContent = text;
+                this.statusEl.className = type;
+                setTimeout(() => {
+                    this.statusEl.style.display = 'none';
+                }, 5000);
             }
         }
         
-        // Initialize on page load
+        // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             new PaymentSystem();
+            
+            // Plan selection handlers
+            window.selectPlan = (plan) => {
+                document.querySelectorAll('.plan-option').forEach(el => {
+                    el.style.borderColor = '#ddd';
+                    el.style.backgroundColor = '';
+                });
+                event.currentTarget.style.borderColor = '#3d5afe';
+                event.currentTarget.style.backgroundColor = '#f8f9ff';
+                new PaymentSystem().selectPlan(plan);
+            };
         });
     </script>
 </body>
