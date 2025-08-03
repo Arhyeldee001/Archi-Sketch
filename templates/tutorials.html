@@ -3,9 +3,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR Tracer - Dashboard</title>
+    <title>AR Tracer - Tutorials</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --gradient-start: #667eea;
+            --gradient-end: #764ba2;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            min-height: 100vh;
+            color: var(--text-light);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 2rem 1rem;
+            width: 100%;
+            max-width: 1200px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .slideshow-container {
+            position: relative;
+            max-width: 800px;
+            width: 90%;
+            margin: 2rem auto;
+            overflow: hidden;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .slide {
+            display: none;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .slide.active {
+            display: block;
+        }
+        
+        .slide img {
+            width: 100%;
+            max-height: 500px;
+            object-fit: contain;
+            background: #000;
+        }
+        
+        .slide-caption {
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.95);
+            color: #1e293b;
+        }
+        
+        .slide-caption h3 {
+            margin: 0 0 0.5rem;
+            font-size: 1.5rem;
+        }
+        
+        .slide-caption p {
+            margin: 0;
+            line-height: 1.5;
+        }
+        
+        .prev, .next {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+        
+        .prev:hover, .next:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
+        .prev {
+            left: 20px;
+        }
+        
+        .next {
+            right: 20px;
+        }
+        
+        .dots-container {
+            text-align: center;
+            padding: 1rem 0;
+        }
+        
+        .dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin: 0 5px;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .dot.active {
+            background-color: white;
+        }
+        
+        .back-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            margin: 1rem 0;
+            font-size: 1rem;
+        }
+        
+        .back-btn:hover {
+            background: var(--primary-dark);
+            transform: scale(1.03);
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .slide img {
+                max-height: 300px;
+            }
+            
+            .prev, .next {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h2>TUTORIALS WECOME</h2>
+    <div class="header">
+        <h1>AR Tracer Tutorials</h1>
+        <p>Learn how to use AR Tracer effectively</p>
+    </div>
+    
+    <div class="slideshow-container">
+        <!-- Slide 1 -->
+        <div class="slide active">
+            <img src="https://via.placeholder.com/800x500/667eea/ffffff?text=Tutorial+1" alt="Tutorial Step 1">
+            <div class="slide-caption">
+                <h3>Getting Started</h3>
+                <p>Upload your architectural plans to begin tracing in augmented reality.</p>
+            </div>
+        </div>
+        
+        <!-- Slide 2 -->
+        <div class="slide">
+            <img src="https://via.placeholder.com/800x500/764ba2/ffffff?text=Tutorial+2" alt="Tutorial Step 2">
+            <div class="slide-caption">
+                <h3>AR Calibration</h3>
+                <p>Point your device at a flat surface to calibrate the AR environment.</p>
+            </div>
+        </div>
+        
+        <!-- Slide 3 -->
+        <div class="slide">
+            <img src="https://via.placeholder.com/800x500/4f46e5/ffffff?text=Tutorial+3" alt="Tutorial Step 3">
+            <div class="slide-caption">
+                <h3>Tracing Techniques</h3>
+                <p>Use the tracing tools to overlay your designs in the real world.</p>
+            </div>
+        </div>
+        
+        <!-- Slide 4 -->
+        <div class="slide">
+            <img src="https://via.placeholder.com/800x500/4338ca/ffffff?text=Tutorial+4" alt="Tutorial Step 4">
+            <div class="slide-caption">
+                <h3>Saving & Sharing</h3>
+                <p>Save your traced projects and share them with colleagues.</p>
+            </div>
+        </div>
+        
+        <!-- Navigation arrows -->
+        <button class="prev" onclick="changeSlide(-1)">❮</button>
+        <button class="next" onclick="changeSlide(1)">❯</button>
+    </div>
+    
+    <div class="dots-container">
+        <span class="dot active" onclick="currentSlide(1)"></span>
+        <span class="dot" onclick="currentSlide(2)"></span>
+        <span class="dot" onclick="currentSlide(3)"></span>
+        <span class="dot" onclick="currentSlide(4)"></span>
+    </div>
+    
+    <button class="back-btn" onclick="window.location.href='/'">Back to Dashboard</button>
+    
+    <script>
+        let slideIndex = 1;
+        
+        function showSlides(n) {
+            let i;
+            let slides = document.getElementsByClassName("slide");
+            let dots = document.getElementsByClassName("dot");
+            
+            if (n > slides.length) {slideIndex = 1}
+            if (n < 1) {slideIndex = slides.length}
+            
+            for (i = 0; i < slides.length; i++) {
+                slides[i].classList.remove("active");
+            }
+            
+            for (i = 0; i < dots.length; i++) {
+                dots[i].classList.remove("active");
+            }
+            
+            slides[slideIndex-1].classList.add("active");
+            dots[slideIndex-1].classList.add("active");
+        }
+        
+        function changeSlide(n) {
+            showSlides(slideIndex += n);
+        }
+        
+        function currentSlide(n) {
+            showSlides(slideIndex = n);
+        }
+        
+        // Auto-advance slides every 5 seconds
+        setInterval(() => {
+            changeSlide(1);
+        }, 5000);
+    </script>
 </body>
 </html>
