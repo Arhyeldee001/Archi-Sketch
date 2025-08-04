@@ -133,6 +133,54 @@
             background: var(--primary-dark);
             transform: scale(1.03);
         }
+
+        /* New styles for edit forms */
+        .edit-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+
+        .form-actions {
+            grid-column: 1 / -1;
+            margin-top: 1rem;
+            text-align: right;
+        }
+
+        .message {
+            padding: 0.5rem;
+            border-radius: 4px;
+            text-align: center;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .edit-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        .edit-btn:hover {
+            background: var(--primary-dark);
+        }
         
         @media (max-width: 768px) {
             .info-grid {
@@ -165,6 +213,28 @@
                 <div class="info-label">Phone Number:</div>
                 <div class="info-value" id="user-phone">Loading...</div>
             </div>
+
+            <button class="edit-btn" onclick="toggleEditForm('profile')">Edit Profile</button>
+
+            <form id="profile-form" onsubmit="updateProfile(event)" style="display: none;">
+                <div class="info-grid">
+                    <div class="info-label">Full Name:</div>
+                    <div class="info-value">
+                        <input type="text" id="edit-fullname" class="edit-input" required>
+                    </div>
+                    
+                    <div class="info-label">Phone:</div>
+                    <div class="info-value">
+                        <input type="text" id="edit-phone" class="edit-input">
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="back-btn" onclick="toggleEditForm('profile')">Cancel</button>
+                        <button type="submit" class="btn-primary">Save Changes</button>
+                    </div>
+                </div>
+            </form>
+            <div id="profile-message" class="message"></div>
         </div>
         
         <div class="account-section">
@@ -192,114 +262,241 @@
                 </div>
             </div>
         </div>
+
+        <div class="account-section">
+            <h2>Change Password</h2>
+            <form id="password-form" onsubmit="changePassword(event)">
+                <div class="info-grid">
+                    <div class="info-label">Current Password:</div>
+                    <div class="info-value">
+                        <input type="password" id="current-password" class="edit-input" required>
+                    </div>
+                    
+                    <div class="info-label">New Password:</div>
+                    <div class="info-value">
+                        <input type="password" id="new-password" class="edit-input" required minlength="8">
+                    </div>
+                    
+                    <div class="info-label">Confirm Password:</div>
+                    <div class="info-value">
+                        <input type="password" id="confirm-password" class="edit-input" required minlength="8">
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Change Password</button>
+                    </div>
+                </div>
+            </form>
+            <div id="password-message" class="message"></div>
+        </div>
     </div>
     
     <button class="back-btn" onclick="window.location.href='/'">Back to Dashboard</button>
     
     <script>
-      // Fetch user data from your backend
-      async function fetchUserData() {
-          try {
-              // Get the user's email from localStorage
-              const email = localStorage.getItem('user_email');
-              if (!email) {
-                  throw new Error('User email not found');
-              }
-      
-              // Fetch user profile data
-              const userResponse = await fetch(`/api/user-profile?email=${encodeURIComponent(email)}`);
-              if (!userResponse.ok) {
-                  throw new Error('Failed to fetch user profile');
-              }
-              const userData = await userResponse.json();
-      
-              // Fetch subscription data
-              const subResponse = await fetch(`/check-subscription?email=${encodeURIComponent(email)}`);
-              if (!subResponse.ok) {
-                  throw new Error('Failed to fetch subscription data');
-              }
-              const subData = await subResponse.json();
-      
-              // Populate user info
-              document.getElementById('user-name').textContent = userData.name || 'Not provided';
-              document.getElementById('user-email').textContent = email;
-              document.getElementById('user-phone').textContent = userData.phone || 'Not provided';
-      
-              // Populate subscription info
-              const statusElement = document.getElementById('subscription-status');
-              const expiryDate = subData.has_access ? new Date(subData.expiry) : null;
-      
-              if (subData.has_access) {
-                  document.getElementById('plan-type').textContent = subData.is_trial ? 'Free Trial' : 'Premium Weekly';
-                  document.getElementById('subscription-date').textContent = 
-                      new Date(expiryDate.getTime() - (subData.is_trial ? 86400000 : 604800000)).toLocaleString();
-                  document.getElementById('expiry-date').textContent = expiryDate.toLocaleString();
-      
-                  statusElement.textContent = subData.is_trial ? 'TRIAL' : 'ACTIVE';
-                  statusElement.className = `subscription-status ${subData.is_trial ? 'trial' : 'active'}`;
-                  
-                  document.getElementById('countdown-container').style.display = 'block';
-                  startCountdown(expiryDate);
-              } else {
-                  document.getElementById('plan-type').textContent = 'No active subscription';
-                  document.getElementById('subscription-date').textContent = 'N/A';
-                  document.getElementById('expiry-date').textContent = 'N/A';
-                  
-                  statusElement.textContent = 'EXPIRED';
-                  statusElement.className = 'subscription-status expired';
-              }
-              
-          } catch (error) {
-              console.error('Error fetching user data:', error);
-              // Show error to user
-              document.getElementById('user-name').textContent = 'Error loading data';
-              document.getElementById('user-email').textContent = 'Error loading data';
-              document.getElementById('user-phone').textContent = 'Error loading data';
-              
-              document.getElementById('plan-type').textContent = 'Error loading data';
-              document.getElementById('subscription-date').textContent = 'Error loading data';
-              document.getElementById('expiry-date').textContent = 'Error loading data';
-              
-              const statusElement = document.getElementById('subscription-status');
-              statusElement.textContent = 'ERROR';
-              statusElement.className = 'subscription-status expired';
-          }
-      }
-      
-      // Countdown timer function
-      function startCountdown(expiryDate) {
-          const countdownElement = document.getElementById('countdown-timer');
-          const expiryTime = new Date(expiryDate).getTime();
-          
-          function updateCountdown() {
-              const now = new Date().getTime();
-              const distance = expiryTime - now;
-              
-              if (distance < 0) {
-                  countdownElement.textContent = "EXPIRED";
-                  document.getElementById('subscription-status').textContent = 'EXPIRED';
-                  document.getElementById('subscription-status').className = 'subscription-status expired';
-                  return;
-              }
-              
-              // Calculate hours, minutes, seconds
-              const hours = Math.floor(distance / (1000 * 60 * 60));
-              const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-              const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-              
-              // Display the result
-              countdownElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-          }
-          
-          // Update immediately
-          updateCountdown();
-          
-          // Update every second
-          const countdownInterval = setInterval(updateCountdown, 1000);
-      }
-      
-      // Initialize when page loads
-      document.addEventListener('DOMContentLoaded', fetchUserData);
-  </script>
+        // Fetch user data from your backend
+        async function fetchUserData() {
+            try {
+                // Get the user's email from localStorage
+                const email = localStorage.getItem('user_email');
+                if (!email) {
+                    throw new Error('User email not found');
+                }
+        
+                // Fetch user profile data
+                const userResponse = await fetch(`/api/user-profile?email=${encodeURIComponent(email)}`);
+                if (!userResponse.ok) {
+                    throw new Error('Failed to fetch user profile');
+                }
+                const userData = await userResponse.json();
+        
+                // Fetch subscription data
+                const subResponse = await fetch(`/check-subscription?email=${encodeURIComponent(email)}`);
+                if (!subResponse.ok) {
+                    throw new Error('Failed to fetch subscription data');
+                }
+                const subData = await subResponse.json();
+        
+                // Populate user info
+                document.getElementById('user-name').textContent = userData.name || 'Not provided';
+                document.getElementById('user-email').textContent = email;
+                document.getElementById('user-phone').textContent = userData.phone || 'Not provided';
+
+                // Populate edit fields
+                document.getElementById('edit-fullname').value = userData.name || '';
+                document.getElementById('edit-phone').value = userData.phone || '';
+        
+                // Populate subscription info
+                const statusElement = document.getElementById('subscription-status');
+                const expiryDate = subData.has_access ? new Date(subData.expiry) : null;
+        
+                if (subData.has_access) {
+                    document.getElementById('plan-type').textContent = subData.is_trial ? 'Free Trial' : 'Premium Weekly';
+                    document.getElementById('subscription-date').textContent = 
+                        new Date(expiryDate.getTime() - (subData.is_trial ? 86400000 : 604800000)).toLocaleString();
+                    document.getElementById('expiry-date').textContent = expiryDate.toLocaleString();
+        
+                    statusElement.textContent = subData.is_trial ? 'TRIAL' : 'ACTIVE';
+                    statusElement.className = `subscription-status ${subData.is_trial ? 'trial' : 'active'}`;
+                    
+                    document.getElementById('countdown-container').style.display = 'block';
+                    startCountdown(expiryDate);
+                } else {
+                    document.getElementById('plan-type').textContent = 'No active subscription';
+                    document.getElementById('subscription-date').textContent = 'N/A';
+                    document.getElementById('expiry-date').textContent = 'N/A';
+                    
+                    statusElement.textContent = 'EXPIRED';
+                    statusElement.className = 'subscription-status expired';
+                }
+                
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+                // Show error to user
+                document.getElementById('user-name').textContent = 'Error loading data';
+                document.getElementById('user-email').textContent = 'Error loading data';
+                document.getElementById('user-phone').textContent = 'Error loading data';
+                
+                document.getElementById('plan-type').textContent = 'Error loading data';
+                document.getElementById('subscription-date').textContent = 'Error loading data';
+                document.getElementById('expiry-date').textContent = 'Error loading data';
+                
+                const statusElement = document.getElementById('subscription-status');
+                statusElement.textContent = 'ERROR';
+                statusElement.className = 'subscription-status expired';
+            }
+        }
+        
+        // Countdown timer function
+        function startCountdown(expiryDate) {
+            const countdownElement = document.getElementById('countdown-timer');
+            const expiryTime = new Date(expiryDate).getTime();
+            
+            function updateCountdown() {
+                const now = new Date().getTime();
+                const distance = expiryTime - now;
+                
+                if (distance < 0) {
+                    countdownElement.textContent = "EXPIRED";
+                    document.getElementById('subscription-status').textContent = 'EXPIRED';
+                    document.getElementById('subscription-status').className = 'subscription-status expired';
+                    return;
+                }
+                
+                // Calculate hours, minutes, seconds
+                const hours = Math.floor(distance / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                
+                // Display the result
+                countdownElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
+            // Update immediately
+            updateCountdown();
+            
+            // Update every second
+            const countdownInterval = setInterval(updateCountdown, 1000);
+        }
+
+        // Toggle edit form visibility
+        function toggleEditForm(type) {
+            if (type === 'profile') {
+                const form = document.getElementById('profile-form');
+                form.style.display = form.style.display === 'none' ? 'block' : 'none';
+                const btn = document.querySelector('.edit-btn');
+                btn.textContent = form.style.display === 'none' ? 'Edit Profile' : 'Cancel Edit';
+            }
+        }
+
+        // Update profile function
+        async function updateProfile(event) {
+            event.preventDefault();
+            const email = localStorage.getItem('user_email');
+            const fullname = document.getElementById('edit-fullname').value;
+            const phone = document.getElementById('edit-phone').value;
+
+            try {
+                const response = await fetch('/api/update-profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, fullname, phone })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Failed to update profile');
+                }
+
+                // Update the displayed values
+                document.getElementById('user-name').textContent = fullname || 'Not provided';
+                document.getElementById('user-phone').textContent = phone || 'Not provided';
+                
+                showMessage('Profile updated successfully!', 'success', 'profile-message');
+                toggleEditForm('profile');
+            } catch (error) {
+                showMessage(error.message || 'Failed to update profile', 'error', 'profile-message');
+            }
+        }
+
+        // Change password function
+        async function changePassword(event) {
+            event.preventDefault();
+            const email = localStorage.getItem('user_email');
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            // Basic validation
+            if (newPassword !== confirmPassword) {
+                showMessage('New passwords do not match', 'error', 'password-message');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        email, 
+                        current_password: currentPassword, 
+                        new_password: newPassword 
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Failed to change password');
+                }
+
+                // Clear the form
+                document.getElementById('password-form').reset();
+                showMessage('Password changed successfully!', 'success', 'password-message');
+            } catch (error) {
+                showMessage(error.message || 'Failed to change password', 'error', 'password-message');
+            }
+        }
+
+        // Helper function to show messages
+        function showMessage(text, type, elementId) {
+            const element = document.getElementById(elementId);
+            element.textContent = text;
+            element.className = `${type}-message`;
+            element.style.display = 'block';
+            
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', fetchUserData);
+    </script>
 </body>
 </html>
