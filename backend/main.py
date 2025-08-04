@@ -257,6 +257,11 @@ def tutorials(request: Request):
     """Tutorials route"""
     return templates.TemplateResponse("tutorials.html", {"request": request})
 
+@app.get("/accounts.html", response_class=HTMLResponse)
+def accounts(request: Request):
+    """accounts route"""
+    return templates.TemplateResponse("accounts.html", {"request": request})
+
 
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
@@ -379,6 +384,7 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
