@@ -7,6 +7,9 @@ import base64
 from backend.db import SessionLocal
 from backend.models import User, Subscription
 from sqlalchemy.orm import Session
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from passlib.context import CryptContext
+
 
 router = APIRouter()
 
@@ -212,3 +215,73 @@ async def check_subscription(email: str, db: Session = Depends(get_db)):
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/user-profile")
+async def get_user_profile(email: str, db: Session = Depends(get_db)):
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return {
+            "name": user.fullname or "",  # Note: using fullname instead of full_name
+            "email": user.email,
+            "phone": user.phone or ""  # Note: using phone instead of phone_number
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+# Add these at the top of your file
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+# Add these new endpoints
+@router.post("/api/update-profile")
+async def update_profile(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    data = await request.json()
+    email = data.get("email")
+    fullname = data.get("fullname")
+    phone = data.get("phone")
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if fullname is not None:
+        user.fullname = fullname
+    if phone is not None:
+        user.phone = phone
+
+    db.commit()
+    return {"status": "success", "message": "Profile updated"}
+
+@router.post("/api/change-password")
+async def change_password(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    data = await request.json()
+    email = data.get("email")
+    current_password = data.get("current_password")
+    new_password = data.get("new_password")
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Verify current password
+    if not pwd_context.verify(current_password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+    # Update password
+    user.hashed_password = pwd_context.hash(new_password)
+    db.commit()
+
+    return {"status": "success", "message": "Password updated successfully"}
