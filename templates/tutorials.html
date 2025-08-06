@@ -43,38 +43,44 @@
         
         .slideshow-container {
             position: relative;
-            max-width: 1080px; /* Match your slide width */
             width: 90%;
-            height: 90vh; /* Use viewport height for responsive sizing */
-            max-height: 1920px; /* Match your slide height */
+            max-width: 1080px;
+            height: 90vh;
+            max-height: 1920px;
             margin: 2rem auto;
             overflow: hidden;
             border-radius: 16px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            aspect-ratio: 9/16; /* Maintain 1080x1920 aspect ratio */
-            display: flex; /* Add this */
-            flex-direction: column; /* Add this */
+            aspect-ratio: 9/16;
+            display: flex;
+            flex-direction: column;
         }
         
         .slide {
             display: none;
             width: 100%;
-            height: 100%; /* Fill container */
-            text-align: center;
-            flex: 1; /* Take up available space */
-            position: relative; /* Add this */
+            height: 100%;
+            position: relative;
+            flex-direction: column;
+            justify-content: space-between;
         }
         
         .slide.active {
-            display: flex; /* Change from block to flex */
-            flex-direction: column;
+            display: flex;
+        }
+        
+        .slide-image-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
         }
         
         .slide img {
             width: 100%;
-            height: 100%; /* Fill slide */
-            flex: 1;
-            object-fit: contain; /* Maintain aspect ratio */
+            height: 100%;
+            object-fit: contain;
             background: #000;
         }
         
@@ -83,6 +89,7 @@
             background: rgba(255, 255, 255, 0.95);
             color: #1e293b;
             width: 100%;
+            box-sizing: border-box;
         }
         
         .slide-caption h3 {
@@ -170,8 +177,9 @@
                 font-size: 2rem;
             }
             
-            .slide img {
-                max-height: 300px;
+            .slideshow-container {
+                height: 80vh;
+                max-height: none;
             }
             
             .prev, .next {
@@ -179,10 +187,13 @@
                 height: 40px;
                 font-size: 1.2rem;
             }
-            .slideshow-container {
-                height: 80vh; /* Slightly smaller on mobile */
-                max-height: none; /* Remove max-height restriction */
-             
+            
+            .slide-caption {
+                padding: 1rem;
+            }
+            
+            .slide-caption h3 {
+                font-size: 1.2rem;
             }
         }
     </style>
@@ -196,8 +207,9 @@
     <div class="slideshow-container">
         <!-- Slide 1 -->
         <div class="slide active">
-            <img src="https://archisketch.onrender.com/static/onboarding/onboarding1.jpg" 
-             class="onboarding-image active" id="image1">
+            <div class="slide-image-container">
+                <img src="https://archisketch.onrender.com/static/onboarding/onboarding1.jpg" alt="Tutorial Step 1">
+            </div>
             <div class="slide-caption">
                 <h3>Getting Started</h3>
                 <p>Upload your architectural plans to begin tracing in augmented reality.</p>
@@ -206,8 +218,9 @@
         
         <!-- Slide 2 -->
         <div class="slide">
-            <img src="https://archisketch.onrender.com/static/onboarding/onboarding2.jpg" 
-             class="onboarding-image" id="image2">
+            <div class="slide-image-container">
+                <img src="https://archisketch.onrender.com/static/onboarding/onboarding2.jpg" alt="Tutorial Step 2">
+            </div>
             <div class="slide-caption">
                 <h3>AR Calibration</h3>
                 <p>Point your device at a flat surface to calibrate the AR environment.</p>
@@ -216,8 +229,9 @@
         
         <!-- Slide 3 -->
         <div class="slide">
-            <img src="https://archisketch.onrender.com/static/onboarding/onboarding3.jpg" 
-             class="onboarding-image" id="image3">
+            <div class="slide-image-container">
+                <img src="https://archisketch.onrender.com/static/onboarding/onboarding3.jpg" alt="Tutorial Step 3">
+            </div>
             <div class="slide-caption">
                 <h3>Tracing Techniques</h3>
                 <p>Use the tracing tools to overlay your designs in the real world.</p>
@@ -226,8 +240,9 @@
         
         <!-- Slide 4 -->
         <div class="slide">
-            <img src="https://archisketch.onrender.com/static/onboarding/onboarding4.jpg" 
-             class="onboarding-image" id="image4">
+            <div class="slide-image-container">
+                <img src="https://archisketch.onrender.com/static/onboarding/onboarding4.jpg" alt="Tutorial Step 4">
+            </div>
             <div class="slide-caption">
                 <h3>Saving & Sharing</h3>
                 <p>Save your traced projects and share them with colleagues.</p>
@@ -236,11 +251,12 @@
 
         <!-- Slide 5 -->
         <div class="slide">
-            <img src="https://archisketch.onrender.com/static/onboarding/onboarding5.jpg" 
-             class="onboarding-image" id="image5">
+            <div class="slide-image-container">
+                <img src="https://archisketch.onrender.com/static/onboarding/onboarding5.jpg" alt="Tutorial Step 5">
+            </div>
             <div class="slide-caption">
-                <h3>Saving & Sharing</h3>
-                <p>Save your traced projects and share them with colleagues.</p>
+                <h3>Advanced Features</h3>
+                <p>Explore measurement tools and 3D preview modes.</p>
             </div>
         </div>
         
@@ -290,7 +306,7 @@
             showSlides(slideIndex = n);
         }
         
-        // Auto-advance slides every 5 seconds
+        // Auto-advance slides every 8 seconds
         setInterval(() => {
             changeSlide(1);
         }, 8000);
