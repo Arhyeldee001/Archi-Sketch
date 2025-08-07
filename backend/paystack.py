@@ -44,7 +44,7 @@ async def start_trial(request: Request, db: Session = Depends(get_db)):
             raise HTTPException(status_code=400, detail="Free trial already used")
 
         # Calculate expiry (24 hours)
-        expiry_date = datetime.now() + timedelta(hours=TRIAL_DURATION_HOURS)
+        expiry_date = datetime.utcnow() + timedelta(hours=TRIAL_DURATION_HOURS)
         
         # Create/update user record
         if not user:
@@ -150,8 +150,8 @@ async def verify_payment(
         
         payment_data = verify_response.json()
         if payment_data["data"]["status"] == "success":
-            # Grant 7-day access
-            expiry_date = datetime.now() + timedelta(days=1)
+            # Grant 1-day access
+            expiry_date = datetime.utcnow() + timedelta(days=1)
             
             # Get or create user
             user = db.query(User).filter(User.email == email).first()
@@ -198,22 +198,28 @@ async def verify_payment(
 async def check_subscription(email: str, db: Session = Depends(get_db)):
     """Check if user has active subscription (even after logout)"""
     try:
+        print(f"\n🔍 [DEBUG] Checking subscription for: {email}")  # Log email
         # Find the MOST RECENT valid subscription
         active_sub = db.query(Subscription).filter(
             Subscription.user_email == email,
-            Subscription.expiry_date > datetime.now()
+            Subscription.expiry_date > datetime.utcnow()
         ).order_by(Subscription.expiry_date.desc()).first()
 
         if active_sub:
+            print(f"✅ [DEBUG] Active subscription found:")
+            print(f"   - Trial: {active_sub.is_trial}")
+            print(f"   - Expiry (UTC): {active_sub.expiry_date.isoformat()}Z")  # Log UTC time
             return {
                 "has_access": True,
-                "expiry": active_sub.expiry_date.isoformat(),
+                "expiry_utc": active_sub.expiry_date.isoformat() + "Z",  # Add UTC marker
                 "is_trial": active_sub.is_trial
             }
-        
+
+        print("❌ [DEBUG] No active subscription found")
         return {"has_access": False, "reason": "No active subscription"}
     
     except Exception as e:
+        print(f"🔥 [DEBUG] Error in check_subscription: {str(e)}")  # Log errors
         raise HTTPException(status_code=500, detail=str(e))
 
 
