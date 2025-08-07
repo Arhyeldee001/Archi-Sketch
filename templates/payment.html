@@ -102,7 +102,7 @@
         
         <div class="plan-option" onclick="selectPlan('premium')">
             <h3>Premium Daily Access</h3>
-            <p>₦200 - Full features for 1 day</p>
+            <p>₦300 - Full features for 1 day</p>
         </div>
         
         <button id="confirm-btn" style="display:none;">Continue</button>
@@ -142,7 +142,7 @@
                 this.confirmBtn.style.display = 'block';
                 this.confirmBtn.textContent = plan === 'trial' 
                     ? "Start Free Trial" 
-                    : "Pay Now (₦200)";
+                    : "Pay Now (₦300)";
             }
             
             async startTrial() {
