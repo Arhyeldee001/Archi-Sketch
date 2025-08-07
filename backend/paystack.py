@@ -16,8 +16,8 @@ router = APIRouter()
 # Paystack configuration
 PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY")
 BASE_URL = os.getenv("BASE_URL")  # Your frontend URL (e.g., "https://yourdomain.com")
-WEEKLY_SUBSCRIPTION_AMOUNT = 100 * 200  # 20000 Naira in kobo (₦20,000)
-TRIAL_DURATION_HOURS = 24  # 1 day trial
+WEEKLY_SUBSCRIPTION_AMOUNT = 100 * 300  # 20000 Naira in kobo (₦20,000)
+TRIAL_DURATION_HOURS = 1  # 1 hour trial
 
 def get_db():
     db = SessionLocal()
@@ -86,7 +86,7 @@ async def initiate_payment(request: Request, db: Session = Depends(get_db)):
         
         payload = {
             "email": email,
-            "amount": WEEKLY_SUBSCRIPTION_AMOUNT,
+            "amount": DAILY_SUBSCRIPTION_AMOUNT,
             "reference": transaction_ref,
             "callback_url": f"{BASE_URL}/verify-paystack-payment?email={email}",
             "metadata": {
@@ -94,7 +94,7 @@ async def initiate_payment(request: Request, db: Session = Depends(get_db)):
                     {
                         "display_name": "Subscription Type",
                         "variable_name": "subscription_type",
-                        "value": "weekly_access"
+                        "value": "daily_access"
                     }
                 ]
             }
@@ -151,7 +151,7 @@ async def verify_payment(
         payment_data = verify_response.json()
         if payment_data["data"]["status"] == "success":
             # Grant 7-day access
-            expiry_date = datetime.now() + timedelta(days=7)
+            expiry_date = datetime.now() + timedelta(days=1)
             
             # Get or create user
             user = db.query(User).filter(User.email == email).first()
@@ -164,7 +164,7 @@ async def verify_payment(
                 user_email=email,
                 expiry_date=expiry_date,
                 is_trial=False,
-                amount_paid=200,  # ₦5000 in Naira (not kobo)
+                amount_paid=300,  # ₦5000 in Naira (not kobo)
                 payment_reference=payment_ref,
                 is_active=True
             )
@@ -180,7 +180,7 @@ async def verify_payment(
             print(f"""
             🟢 NEW SUBSCRIPTION CREATED
             User: {email} (ID: {user.id})
-            Amount: ₦{5000}
+            Amount: ₦{300}
             Expires: {expiry_date}
             Reference: {payment_ref}
             """)
