@@ -174,27 +174,49 @@
                     this.confirmBtn.disabled = false;
                 }
             }
-            
             async payNow() {
                 const email = this.emailInput.value;
                 if (!email) return this.showMessage("Please enter your email", "error");
                 
                 this.confirmBtn.disabled = true;
+                this.showMessage("Processing payment...", "success");
                 
                 try {
+                    console.log("Initiating payment for:", email);
                     const response = await fetch('/initiate-payment', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
                         body: JSON.stringify({ email })
                     });
+            
+                    const responseData = await response.json();
+                    console.log("Payment response:", responseData);
+            
+                    if (!response.ok) {
+                        throw new Error(responseData.detail || "Payment initiation failed");
+                    }
+            
+                    if (!responseData.payment_url) {
+                        throw new Error("No payment URL received from server");
+                    }
+            
+                    // Store email before redirecting
+                    localStorage.setItem('user_email', email);
                     
-                    if (!response.ok) throw await response.json();
-                    
-                    const { payment_url } = await response.json();
-                    window.location.href = payment_url;
+                    // Force redirect (including for popup blockers)
+                    window.location.replace(responseData.payment_url);
                     
                 } catch (error) {
-                    this.showMessage(error.detail || "Payment initiation failed", "error");
+                    console.error("Payment error:", error);
+                    this.showMessage(
+                        error.message.includes("Failed to fetch") 
+                            ? "Network error - please check your connection"
+                            : error.message,
+                        "error"
+                    );
                 } finally {
                     this.confirmBtn.disabled = false;
                 }
