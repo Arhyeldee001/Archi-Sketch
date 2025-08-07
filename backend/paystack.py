@@ -82,48 +82,68 @@ async def initiate_payment(request: Request, db: Session = Depends(get_db)):
         if not email:
             raise HTTPException(status_code=400, detail="Email required")
 
-        transaction_ref = f"ARTRACER-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        # Generate more unique reference
+        import random
+        transaction_ref = f"AT-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{random.randint(1000,9999)}"
+        
+        # Convert N300 to kobo (₦300 × 100)
+        amount_in_kobo = 300 * 100
         
         payload = {
             "email": email,
-            "amount": DAILY_SUBSCRIPTION_AMOUNT,
+            "amount": amount_in_kobo,
             "reference": transaction_ref,
             "callback_url": f"{BASE_URL}/verify-paystack-payment?email={email}",
             "metadata": {
                 "custom_fields": [
                     {
-                        "display_name": "Subscription Type",
-                        "variable_name": "subscription_type",
+                        "display_name": "Plan Type",
+                        "variable_name": "plan_type",
                         "value": "daily_access"
                     }
                 ]
             }
         }
 
-        print(f"Payload sent to Paystack: {payload}")  # Debug log
+        headers = {
+            "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
+            "Content-Type": "application/json"
+        }
 
-        response = requests.post(
-            "https://api.paystack.co/transaction/initialize",
-            json=payload,
-            headers=get_paystack_auth_header()
-        )
+        print(f"Payload to Paystack: {payload}")  # Debug log
 
-        print(f"Paystack response: {response.text}")  # Debug log
-
-        if response.status_code == 200:
-            return JSONResponse({
-                "status": "success",
-                "payment_url": response.json()["data"]["authorization_url"]
-            })
-        else:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Paystack error: {response.text}"
+        # Add timeout and better error handling
+        try:
+            response = requests.post(
+                "https://api.paystack.co/transaction/initialize",
+                json=payload,
+                headers=headers,
+                timeout=10  # 10-second timeout
             )
+            response.raise_for_status()  # Raises exception for 4XX/5XX
+        except requests.exceptions.RequestException as e:
+            print(f"Paystack API request failed: {str(e)}")
+            raise HTTPException(status_code=502, detail="Payment gateway unavailable")
+
+        response_data = response.json()
+        print(f"Paystack response: {response_data}")
+
+        if not response_data.get("status"):
+            raise HTTPException(status_code=502, detail="Invalid response from Paystack")
+
+        if not response_data["data"].get("authorization_url"):
+            raise HTTPException(status_code=502, detail="No payment URL received from Paystack")
+
+        return {
+            "status": "success",
+            "payment_url": response_data["data"]["authorization_url"]
+        }
             
+    except HTTPException:
+        raise  # Re-raise existing HTTP exceptions
     except Exception as e:
-        print(f"Error in initiate-payment: {str(e)}")  # Debug log
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Unexpected error in initiate-payment: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
         
 @router.get("/verify-paystack-payment")
 async def verify_payment(
