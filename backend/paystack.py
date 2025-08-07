@@ -211,6 +211,7 @@ async def check_subscription(email: str, db: Session = Depends(get_db)):
             print(f"   - Expiry (UTC): {active_sub.expiry_date.isoformat()}Z")  # Log UTC time
             return {
                 "has_access": True,
+                "start_utc": active_sub.created_at.isoformat() + "Z",  # Add creation timestamp
                 "expiry_utc": active_sub.expiry_date.isoformat() + "Z",  # Add UTC marker
                 "is_trial": active_sub.is_trial
             }
