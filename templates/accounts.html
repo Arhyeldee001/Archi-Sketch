@@ -348,7 +348,7 @@
                 if (subData.has_access) {
                     document.getElementById('plan-type').textContent = subData.is_trial ? 'Free Trial' : 'Premium Weekly';
                     document.getElementById('subscription-date').textContent = 
-                        formatLocalDate(subData.expiry_utc);
+                        formatLocalDate(subData.start_utc);
                     document.getElementById('expiry-date').textContent = 
                         formatLocalDate(subData.expiry_utc);
         
