@@ -211,6 +211,7 @@ def register(user_data: UserRegistration, db: Session = Depends(get_db)):
 
 @app.post("/complete-onboarding")
 async def complete_onboarding(
+    request: Request,
     user_id: str = Form(...),
     db: Session = Depends(get_db)
 ):
@@ -220,24 +221,34 @@ async def complete_onboarding(
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
+        # Mark onboarding as complete
         user.is_first_login = False
         db.commit()
         
-        response = RedirectResponse(url="/login?onboarding=success", status_code=303)
+        # Redirect directly to dashboard with authenticated session
+        response = RedirectResponse(url="/dashboard.html", status_code=303)
+        
+        # Set both cookies (session + email)
         response.set_cookie(
             key="session_token",
             value=f"session_{user_id}",
-            max_age=31536000,
+            max_age=31536000,  # 1 year
             httponly=True,
-            secure=True,  # Must be True in production
+            secure=True,
             samesite='lax',
             path='/'
         )
+        response.set_cookie(
+            key="user_email",
+            value=user.email,
+            max_age=31536000,
+            path='/'
+        )
+        
         return response
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 # ===== Frontend Routes ===== #
 @app.get("/")
 def root(request: Request):
@@ -384,6 +395,7 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
