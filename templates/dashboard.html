@@ -280,7 +280,18 @@
             </div>
         </div>
     </div>
-		<script src="/static/pwa-install.js"></script>
+		<!-- Add this to your dashboard.html -->
+<div id="pwa-promo" style="display: none; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 15px; border-radius: 10px; margin: 20px 0; text-align: center;">
+    <h3>📲 Get the App Experience!</h3>
+    <p>Install Archi Trace for faster loading and offline access</p>
+    <button onclick="installPWA()" style="background: white; color: #667eea; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer; font-weight: bold;">
+        Install Now
+    </button>
+    <button onclick="document.getElementById('pwa-promo').style.display = 'none'" style="background: transparent; color: white; border: 1px solid white; padding: 10px 20px; border-radius: 25px; cursor: pointer; margin-left: 10px;">
+        Maybe Later
+    </button>
+</div>
+		
     <script>
         // Check for payment success query parameter
         const urlParams = new URLSearchParams(window.location.search);
@@ -288,6 +299,36 @@
             alert('Payment successful! Your subscription is now active.');
         }
         
+				// ======= ADD PWA INSTALL CODE =======
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const pwaPromo = document.getElementById('pwa-promo');
+            if (pwaPromo) pwaPromo.style.display = 'block';
+        });
+        
+        async function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('PWA installed');
+                    dismissPromo();
+                }
+                deferredPrompt = null;
+            }
+        }
+        
+        function dismissPromo() {
+            const pwaPromo = document.getElementById('pwa-promo');
+            if (pwaPromo) pwaPromo.style.display = 'none';
+        }
+        
+        window.addEventListener('appinstalled', dismissPromo);
+        // ======= END PWA INSTALL CODE =======
+
         // Logout function
         function logout() {
             fetch('/api/logout', {
@@ -302,6 +343,8 @@
                 window.location.href = '/login';
             });
         }
+
+			
     </script>
 </body>
 </html>
