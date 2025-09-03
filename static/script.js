@@ -440,3 +440,23 @@ window.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('selectedTemplate');
     }
 });
+
+//PWA
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/static/sw.js')
+      .then(registration => {
+        console.log('SW registered: ', registration);
+      })
+      .catch(registrationError => {
+        console.log('SW registration failed: ', registrationError);
+      });
+  });
+}
+
+// Detect if app is running in standalone mode
+if (window.matchMedia('(display-mode: standalone)').matches) {
+  console.log('Running as PWA');
+  document.body.classList.add('pwa-mode');
+}
