@@ -299,55 +299,11 @@
         if (urlParams.has('payment') && urlParams.get('payment') === 'success') {
             alert('Payment successful! Your subscription is now active.');
         }
-        
-				// ======= ADD PWA INSTALL CODE =======
-        let deferredPrompt;
-        
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            const pwaPromo = document.getElementById('pwa-promo');
-            if (pwaPromo) pwaPromo.style.display = 'block';
-        });
-        
-        async function installPWA() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    console.log('PWA installed');
-                    dismissPromo();
-                }
-                deferredPrompt = null;
-            }
-        }
-        
-        function dismissPromo() {
-            const pwaPromo = document.getElementById('pwa-promo');
-            if (pwaPromo) pwaPromo.style.display = 'none';
-        }
-        
-        window.addEventListener('appinstalled', dismissPromo);
-        // ======= END PWA INSTALL CODE =======
 
-				// Register Service Worker
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/static/sw.js')
-      .then(registration => {
-        console.log('SW registered: ', registration);
-      })
-      .catch(registrationError => {
-        console.log('SW registration failed: ', registrationError);
-      });
-  });
-}
-
-// Detect if app is running in standalone mode
-if (window.matchMedia('(display-mode: standalone)').matches) {
-  console.log('Running as PWA');
-  document.body.classList.add('pwa-mode');
-}
+		// Simple service worker registration
+		if ('serviceWorker' in navigator) {
+		  navigator.serviceWorker.register('/static/sw.js');
+		}
 
         // Logout function
         function logout() {
@@ -368,6 +324,7 @@ if (window.matchMedia('(display-mode: standalone)').matches) {
     </script>
 </body>
 </html>
+
 
 
 
