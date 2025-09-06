@@ -27,7 +27,7 @@ app.include_router(paystack_router)
 app.include_router(admin.router)
 
 static_dir = Path(__file__).parent.parent / "static"
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
+app.mount("/static", StaticFiles(directory="static", check_dir=False), name="static")
 
 # Templates
 templates = Jinja2Templates(directory="templates")
@@ -395,6 +395,7 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
