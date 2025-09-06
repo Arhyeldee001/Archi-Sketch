@@ -2,22 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Archi Trace - Dashboard</title>
-		<!-- SIMPLE PWA META TAGS -->
-		<meta name="apple-mobile-web-app-capable" content="yes">
-		<meta name="apple-mobile-web-app-title" content="Archi Trace">
-		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-		<meta name="theme-color" content="#764ba2">
-		<meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- SIMPLE PWA META TAGS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Archi Trace">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#764ba2">
+    <meta name="mobile-web-app-capable" content="yes">
 
-		<!-- Android Chrome -->
-		<meta name="mobile-web-app-capable" content="yes">
-		<!-- Theme Color -->
-		<meta name="theme-color" content="#764ba2">
-
-		<!-- Viewport for mobile -->
-		<meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover">
     <style>
         :root {
             --primary: #4f46e5;
@@ -246,7 +240,6 @@
                 width: 100%; /* Stack vertically on tiny screens */
             }
         }
-        }
     </style>
 </head>
 <body>
@@ -257,10 +250,10 @@
         <p>Transform your architectural visions into augmented reality</p>
     </div>
 
-	<button id="install-btn" style="display: none; position: fixed; bottom: 20px; right: 20px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 20px; border-radius: 25px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000;">
-	    📲 Install App
-	</button>
-	
+    <button id="install-btn" style="display: none; position: fixed; bottom: 20px; right: 20px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 20px; border-radius: 25px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000;">
+        📲 Install App
+    </button>
+    
     <div class="dashboard-container">
         <div class="cards-row">
             <div class="card top-card">
@@ -284,7 +277,7 @@
             </div>
         </div>
     </div>
-		<!-- PWA Promo Banner -->
+
     <div id="pwa-promo" style="display: none; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 15px; border-radius: 10px; margin: 20px 0; text-align: center;">
         <h3>📲 Get the App Experience!</h3>
         <p>Install Archi Trace for faster loading and offline access</p>
@@ -295,6 +288,7 @@
             Maybe Later
         </button>
     </div>
+
     <script>
         // Check for payment success query parameter
         const urlParams = new URLSearchParams(window.location.search);
@@ -302,31 +296,52 @@
             alert('Payment successful! Your subscription is now active.');
         }
 
-		// Simple install prompt for Android
-		let deferredPrompt;
-		
-		window.addEventListener('beforeinstallprompt', (e) => {
-		    e.preventDefault();
-		    deferredPrompt = e;
-		    
-		    // Show custom install button (optional)
-		    const installBtn = document.getElementById('install-btn');
-		    if (installBtn) {
-		        installBtn.style.display = 'block';
-		        installBtn.onclick = () => {
-		            deferredPrompt.prompt();
-		            deferredPrompt.userChoice.then(() => {
-		                installBtn.style.display = 'none';
-		            });
-		        };
-		    }
-		});
-		
-		// Hide button if already installed
-		window.addEventListener('appinstalled', () => {
-		    const installBtn = document.getElementById('install-btn');
-		    if (installBtn) installBtn.style.display = 'none';
-		});
+        // PWA Installation Functions
+        let deferredPrompt;
+        let installEvent = null;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installEvent = e;
+            
+            // Show install button
+            const installBtn = document.getElementById('install-btn');
+            if (installBtn) {
+                installBtn.style.display = 'block';
+            }
+            
+            // Show promo banner
+            const pwaPromo = document.getElementById('pwa-promo');
+            if (pwaPromo) {
+                pwaPromo.style.display = 'block';
+            }
+        });
+
+        async function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('User accepted PWA installation');
+                    dismissPromo();
+                }
+                deferredPrompt = null;
+            }
+        }
+
+        function dismissPromo() {
+            const pwaPromo = document.getElementById('pwa-promo');
+            const installBtn = document.getElementById('install-btn');
+            if (pwaPromo) pwaPromo.style.display = 'none';
+            if (installBtn) installBtn.style.display = 'none';
+        }
+
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA was installed');
+            dismissPromo();
+        });
+
         // Logout function
         function logout() {
             fetch('/api/logout', {
@@ -342,19 +357,16 @@
             });
         }
 
-			
+        // Simple service worker registration (REQUIRED for Install App prompt)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('SW registered:', registration);
+                })
+                .catch(error => {
+                    console.log('SW registration failed:', error);
+                });
+        }
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
