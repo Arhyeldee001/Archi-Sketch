@@ -2,11 +2,19 @@ const CACHE_NAME = "architrace-cache-v1";
 const urlsToCache = [
   "/",
   "/index.html",
-  "/dashboard.html",
-  "/login.html",
+  "/templates/dashboard.html",
+  "/templates/login.html",
+  "/templates/accounts.html",
+  "/templates/onboarding.html",
+  "/templates/payment.html",
+  "/templates/tutorials.html",
   "/static/style.css",
-  "/static/index.js"
+  "/static/login.js",
+  "/static/script.js",
+  "/static/icons/icon-192x192.png",
+  "/static/icons/icon-512x512.png"
 ];
+
 
 // Install service worker & cache files
 self.addEventListener("install", event => {
