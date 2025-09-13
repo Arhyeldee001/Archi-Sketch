@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!-- keep viewport-fit=cover for full-screen PWA fit -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Account Information - Archi Tracer</title>
 
-    <!-- PWA manifest & theme -->
+    <!-- SIMPLE PWA SETUP - point to the real manifest in the root -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#764ba2">
 
@@ -335,6 +336,7 @@
                 // Fetch user profile data
                 const userResponse = await fetch(`/api/user-profile?email=${encodeURIComponent(email)}`);
                 if (!userResponse.ok) {
+                    console.error('user-profile response status:', userResponse.status, await safeText(userResponse));
                     throw new Error('Failed to fetch user profile');
                 }
                 const userData = await userResponse.json();
@@ -342,6 +344,7 @@
                 // Fetch subscription data
                 const subResponse = await fetch(`/check-subscription?email=${encodeURIComponent(email)}`);
                 if (!subResponse.ok) {
+                    console.error('check-subscription response status:', subResponse.status, await safeText(subResponse));
                     throw new Error('Failed to fetch subscription data');
                 }
                 const subData = await subResponse.json();
@@ -360,8 +363,10 @@
 
                 if (subData.has_access) {
                     document.getElementById('plan-type').textContent = subData.is_trial ? 'Free Trial' : 'Premium Weekly';
-                    document.getElementById('subscription-date').textContent = formatLocalDate(subData.start_utc);
-                    document.getElementById('expiry-date').textContent = formatLocalDate(subData.expiry_utc);
+                    document.getElementById('subscription-date').textContent = 
+                        formatLocalDate(subData.start_utc);
+                    document.getElementById('expiry-date').textContent = 
+                        formatLocalDate(subData.expiry_utc);
 
                     statusElement.textContent = subData.is_trial ? 'TRIAL' : 'ACTIVE';
                     statusElement.className = `subscription-status ${subData.is_trial ? 'trial' : 'active'}`;
@@ -391,6 +396,15 @@
                 const statusElement = document.getElementById('subscription-status');
                 statusElement.textContent = 'ERROR';
                 statusElement.className = 'subscription-status expired';
+            }
+        }
+
+        // helper to safely read response text (avoid throwing on empty)
+        async function safeText(res) {
+            try {
+                return await res.text();
+            } catch (e) {
+                return '<no body>';
             }
         }
 
@@ -526,10 +540,10 @@
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', fetchUserData);
 
-        // Register Service Worker (kept path the same as your original)
+        // Register Service Worker — use root '/sw.js' because your sw is in root
         if ('serviceWorker' in navigator) {
           window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/static/sw.js')
+            navigator.serviceWorker.register('/sw.js')
               .then(registration => {
                 console.log('SW registered: ', registration);
               })
