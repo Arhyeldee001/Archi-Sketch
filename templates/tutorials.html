@@ -2,17 +2,217 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Archi Trace - Tutorials</title>
 
-    <!-- PWA Manifest & Meta -->
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#764ba2">
-
-    <!-- iOS Support -->
+    <!-- SIMPLE PWA META TAGS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Archi Trace">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#764ba2">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- Android Chrome -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#764ba2">
+
+    <!-- Viewport for mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover">
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --gradient-start: #667eea;
+            --gradient-end: #764ba2;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            min-height: 100vh;
+            color: var(--text-light);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            text-align: center;
+            padding: 2rem 1rem;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .slideshow-container {
+            position: relative;
+            width: 90%;
+            max-width: 1080px;
+            height: 90vh;
+            max-height: 1920px;
+            margin: 2rem auto;
+            overflow: hidden;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            aspect-ratio: 9/16;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slide {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        .slide-image-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000;
+        }
+
+        .slide-caption {
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.95);
+            color: #1e293b;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .slide-caption h3 {
+            margin: 0 0 0.5rem;
+            font-size: 1.5rem;
+        }
+
+        .slide-caption p {
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .prev, .next {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .prev:hover, .next:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .prev {
+            left: 20px;
+        }
+
+        .next {
+            right: 20px;
+        }
+
+        .dots-container {
+            text-align: center;
+            padding: 1rem 0;
+        }
+
+        .dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin: 0 5px;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .dot.active {
+            background-color: white;
+        }
+
+        .back-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            margin: 1rem 0;
+            font-size: 1rem;
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+            transform: scale(1.03);
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .slideshow-container {
+                height: 80vh;
+                max-height: none;
+            }
+
+            .prev, .next {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+
+            .slide-caption {
+                padding: 1rem;
+            }
+
+            .slide-caption h3 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="header">
@@ -28,7 +228,7 @@
             </div>
             <div class="slide-caption">
                 <h3>Getting Started</h3>
-                <p>After sign up or login, you would be prompted to your dashboard where you proceed to the tracer app as shown above.</p>
+                <p>After sign up or login, you would be propted to your dashboard where you would proceed to the tracer app as shown above.</p>
             </div>
         </div>
 
@@ -39,7 +239,7 @@
             </div>
             <div class="slide-caption">
                 <h3>Payment</h3>
-                <p>To use Archi Trace you need to subscribe for a token of ₦500 for 3 days. Select your plan and pay as shown above.</p>
+                <p>To use Archi Trace you would have to subscribe for a little token of 500 NGN for 3 days, select your plan and pay as shown above.</p>
             </div>
         </div>
 
@@ -50,7 +250,7 @@
             </div>
             <div class="slide-caption">
                 <h3>Allow Camera</h3>
-                <p>Archi Trace uses your camera to help you trace effectively. Allow camera access for the best experience.</p>
+                <p>Archi Trace uses your camera to help you trace effectively for the best experience, so allow camera access and proceed.</p>
             </div>
         </div>
 
@@ -60,8 +260,8 @@
                 <img src="/static/templates/slide4.gif" alt="Tutorial Step 4">
             </div>
             <div class="slide-caption">
-                <h3>Import Image</h3>
-                <p>After successful payment and camera access, upload your image and start tracing as shown above.</p>
+                <h3>Import image</h3>
+                <p>Upon successful payment and camera access, you would gain full access to the app where you would upload your image and trace as shown above.</p>
             </div>
         </div>
 
@@ -72,7 +272,7 @@
             </div>
             <div class="slide-caption">
                 <h3>Successful Import</h3>
-                <p>When you import your image it will appear like this on the screen. Then move to the next step.</p>
+                <p>When you import your image it will appear as such on the screen and then you move to next step.</p>
             </div>
         </div>
 
@@ -83,7 +283,7 @@
             </div>
             <div class="slide-caption">
                 <h3>Preparation</h3>
-                <p>Place your phone on a stand or tumbler above your paper for stability as illustrated above.</p>
+                <p>Get a phone stand, tumbler or any object with a preferable vertical height and place it on your paper, place the phone on top of the cup as illustrated above.</p>
             </div>
         </div>
 
@@ -93,8 +293,8 @@
                 <img src="/static/templates/slide7.png" alt="Tutorial Step 7">
             </div>
             <div class="slide-caption">
-                <h3>Alignment & Scaling</h3>
-                <p>Reduce opacity to see through your image, drag/pinch/zoom to scale, and use the grid lines for alignment.</p>
+                <h3>Alignment and Scaling</h3>
+                <p>On your phone reduce the opacity to let you see through the image you want to trace, drag, pinch, zoom to preferred scale and alignment. You can activate the grid line in the right panel to help with that.</p>
             </div>
         </div>
 
@@ -104,8 +304,8 @@
                 <img src="/static/templates/slide8.png" alt="Tutorial Step 8">
             </div>
             <div class="slide-caption">
-                <h3>Import More Projects</h3>
-                <p>You can also use the left panel to import additional images.</p>
+                <h3>Import other projects</h3>
+                <p>You can also use the left panel to import more images.</p>
             </div>
         </div>
 
@@ -115,8 +315,8 @@
                 <img src="/static/templates/slide9.png" alt="Tutorial Step 9">
             </div>
             <div class="slide-caption">
-                <h3>Enjoy the Experience</h3>
-                <p>Ensure your stand is stable. Beginners should trace slowly to get used to the rhythm of drawing. Enjoy!</p>
+                <h3>Enjoy the experience</h3>
+                <p>It is important to make sure your cup or phone stand is stable, and for beginners it is advised to trace slowly to fully get acquainted with the rhythm of drawing. Enjoy!</p>
             </div>
         </div>
 
@@ -143,21 +343,23 @@
         let slideIndex = 1;
 
         function showSlides(n) {
+            let i;
             let slides = document.getElementsByClassName("slide");
             let dots = document.getElementsByClassName("dot");
 
-            if (n > slides.length) { slideIndex = 1 }
-            if (n < 1) { slideIndex = slides.length }
+            if (n > slides.length) {slideIndex = 1}
+            if (n < 1) {slideIndex = slides.length}
 
-            for (let i = 0; i < slides.length; i++) {
+            for (i = 0; i < slides.length; i++) {
                 slides[i].classList.remove("active");
             }
-            for (let i = 0; i < dots.length; i++) {
+
+            for (i = 0; i < dots.length; i++) {
                 dots[i].classList.remove("active");
             }
 
-            slides[slideIndex - 1].classList.add("active");
-            dots[slideIndex - 1].classList.add("active");
+            slides[slideIndex-1].classList.add("active");
+            dots[slideIndex-1].classList.add("active");
         }
 
         function changeSlide(n) {
@@ -167,6 +369,11 @@
         function currentSlide(n) {
             showSlides(slideIndex = n);
         }
+
+        // Auto-advance slides every 8 seconds (optional)
+        // setInterval(() => {
+        //     changeSlide(1);
+        // }, 8000);
     </script>
 </body>
 </html>
