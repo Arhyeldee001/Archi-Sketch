@@ -309,23 +309,146 @@
   <button class="back-btn" onclick="window.location.href='/'">Back to Dashboard</button>
 
   <script>
-    // same fetchUserData, startCountdown, updateProfile, changePassword, showMessage, toggleEditForm as before...
-
-    // Register Service Worker
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/static/sw.js')
-          .then(registration => console.log('SW registered: ', registration))
-          .catch(error => console.log('SW registration failed: ', error));
-      });
+    // --- Utility: show message ---
+    function showMessage(elementId, message, type) {
+      const el = document.getElementById(elementId);
+      el.textContent = message;
+      el.className = "message " + (type === "success" ? "success-message" : "error-message");
+      el.style.display = "block";
+      setTimeout(() => el.style.display = "none", 3000);
     }
 
-    // Detect PWA standalone
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      document.body.classList.add('pwa-mode');
+    // --- Toggle edit forms ---
+    function toggleEditForm(section) {
+      const form = document.getElementById(section + "-form");
+      form.style.display = form.style.display === "none" ? "block" : "none";
     }
 
-    document.addEventListener('DOMContentLoaded', fetchUserData);
+    // --- Fetch user data ---
+    async function fetchUserData() {
+      try {
+        // Replace this URL with your backend endpoint
+        const res = await fetch("/api/user");
+        const data = await res.json();
+
+        document.getElementById("user-name").textContent = data.name || "N/A";
+        document.getElementById("user-email").textContent = data.email || "N/A";
+        document.getElementById("user-phone").textContent = data.phone || "N/A";
+
+        document.getElementById("plan-type").textContent = data.plan || "Free";
+        document.getElementById("subscription-date").textContent = data.subscriptionDate || "-";
+        document.getElementById("expiry-date").textContent = data.expiryDate || "-";
+
+        const statusEl = document.getElementById("subscription-status");
+        statusEl.textContent = data.status || "Inactive";
+        statusEl.className = "subscription-status " + (data.status || "").toLowerCase();
+
+        if (data.expiryDate) startCountdown(data.expiryDate);
+
+      } catch (err) {
+        console.error("Error fetching user data", err);
+        showMessage("profile-message", "Failed to load user data", "error");
+      }
+    }
+
+    // --- Countdown timer ---
+    function startCountdown(expiryDate) {
+      const countdownEl = document.getElementById("countdown-timer");
+      const container = document.getElementById("countdown-container");
+      container.style.display = "block";
+
+      function updateTimer() {
+        const now = new Date();
+        const end = new Date(expiryDate);
+        const diff = end - now;
+
+        if (diff <= 0) {
+          countdownEl.textContent = "Expired";
+          return;
+        }
+
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        countdownEl.textContent =
+          String(hours).padStart(2, "0") + ":" +
+          String(minutes).padStart(2, "0") + ":" +
+          String(seconds).padStart(2, "0");
+      }
+
+      updateTimer();
+      setInterval(updateTimer, 1000);
+    }
+
+    // --- Update profile ---
+    async function updateProfile(event) {
+      event.preventDefault();
+      const fullname = document.getElementById("edit-fullname").value;
+      const phone = document.getElementById("edit-phone").value;
+
+      try {
+        const res = await fetch("/api/user/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: fullname, phone: phone })
+        });
+        const result = await res.json();
+
+        if (result.success) {
+          showMessage("profile-message", "Profile updated successfully", "success");
+          fetchUserData();
+          toggleEditForm("profile");
+        } else {
+          showMessage("profile-message", result.message || "Update failed", "error");
+        }
+      } catch (err) {
+        console.error(err);
+        showMessage("profile-message", "Error updating profile", "error");
+      }
+    }
+
+    // --- Change password ---
+    async function changePassword(event) {
+      event.preventDefault();
+      const current = document.getElementById("current-password").value;
+      const newPass = document.getElementById("new-password").value;
+      const confirm = document.getElementById("confirm-password").value;
+
+      if (newPass !== confirm) {
+        showMessage("password-message", "Passwords do not match", "error");
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/user/change-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ currentPassword: current, newPassword: newPass })
+        });
+        const result = await res.json();
+
+        if (result.success) {
+          showMessage("password-message", "Password changed successfully", "success");
+          document.getElementById("password-form").reset();
+        } else {
+          showMessage("password-message", result.message || "Password change failed", "error");
+        }
+      } catch (err) {
+        console.error(err);
+        showMessage("password-message", "Error changing password", "error");
+      }
+    }
+
+    // --- Service worker ---
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js")
+        .then(reg => console.log("SW registered:", reg.scope))
+        .catch(err => console.error("SW registration failed:", err));
+    }
+
+    // --- On load ---
+    document.addEventListener("DOMContentLoaded", fetchUserData);
   </script>
 </body>
 </html>
