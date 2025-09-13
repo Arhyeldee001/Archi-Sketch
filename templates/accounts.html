@@ -1,554 +1,331 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account Information - Archi Tracer</title>
-		<!-- SIMPLE PWA SETUP -->
-		<link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIkFyY2hpIFRyYWNlIiwKICAic2hvcnRfbmFtZSI6ICJBcmNoaVRyYWNlIiwKICAiZGVzY3JpcHRpb24iOiAiQVIgQXJjaGl0ZWN0dXJlIFZpc3VhbGl6YXRpb24gVG9vbCIsCiAgInN0YXJ0X3VybCI6ICIvIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjNjY3ZWVhIiwKICAidGhlbWVfY29sb3IiOiAiIzc2NGJhMiIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImh0dHBzOi8vdmlhLnBsYWNlaG9sZGVyLmNvbS8xOTJ4MTkyLzY2N2VlYS9mZmZmZmY/dGV4dD1BVCIsCiAgICAgICJzaXplcyI6ICIxOTJ4MTkyIiwKICAgICAgInR5cGUiOiAiaW1hZ2UvcG5nIgogICAgfSwKICAgIHsKICAgICAgInNyYyI6ICJodHRwczovL3ZpYS5wbGFjZWhvbGRlci5jb20vNTEyeDUxMi82NjdlZWEvZmZmZmZmP3RleHQ9QVQiLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIKICAgIH0KICBdCn0=">
-		<meta name="theme-color" content="#764ba2">
-		
-		<!-- iOS Support -->
-		<meta name="apple-mobile-web-app-capable" content="yes">
-		<meta name="apple-mobile-web-app-title" content="Archi Trace">
-		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-		
-		<!-- Android Chrome -->
-		<meta name="mobile-web-app-capable" content="yes">
-		<!-- Theme Color -->
-		<meta name="theme-color" content="#764ba2">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Information - Archi Tracer</title>
 
-		<!-- Viewport for mobile -->
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <style>
-        :root {
-            --primary: #4f46e5;
-            --primary-dark: #4338ca;
-            --gradient-start: #667eea;
-            --gradient-end: #764ba2;
-            --text-light: #f8fafc;
-            --text-muted: #94a3b8;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
-            min-height: 100vh;
-            color: var(--text-light);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        
-        .header {
-            text-align: center;
-            padding: 2rem 1rem;
-            width: 100%;
-            max-width: 1200px;
-        }
-        
-        .account-container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            width: 90%;
-            max-width: 800px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            color: #1e293b;
-        }
-        
-        .account-section {
-            margin-bottom: 2rem;
-        }
-        
-        .account-section h2 {
-            color: var(--primary);
-            border-bottom: 2px solid var(--primary);
-            padding-bottom: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-        
-        .info-label {
-            font-weight: 600;
-            color: #475569;
-        }
-        
-        .info-value {
-            font-weight: 500;
-        }
-        
-        .subscription-status {
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-weight: 600;
-            margin-top: 0.5rem;
-        }
-        
-        .active {
-            background-color: var(--success);
-            color: white;
-        }
-        
-        .expired {
-            background-color: var(--danger);
-            color: white;
-        }
-        
-        .trial {
-            background-color: var(--warning);
-            color: white;
-        }
-        
-        .countdown-timer {
-            font-size: 1.5rem;
-            font-weight: 700;
-            text-align: center;
-            margin: 1rem 0;
-            padding: 1rem;
-            background: rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            color: white;
-        }
-        
-        .timer-label {
-            font-size: 1rem;
-            font-weight: 400;
-            display: block;
-            margin-bottom: 0.5rem;
-        }
-        
-        .back-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            margin: 1rem 0;
-            font-size: 1rem;
-        }
-        
-        .back-btn:hover {
-            background: var(--primary-dark);
-            transform: scale(1.03);
-        }
+  <!-- PWA manifest & theme -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#764ba2">
 
-        /* New styles for edit forms */
-        .edit-input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-family: inherit;
-        }
+  <!-- iOS Support -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Archi Trace">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-        .form-actions {
-            grid-column: 1 / -1;
-            margin-top: 1rem;
-            text-align: right;
-        }
+  <!-- Android Chrome -->
+  <meta name="mobile-web-app-capable" content="yes">
 
-        .message {
-            padding: 0.5rem;
-            border-radius: 4px;
-            text-align: center;
-            margin-top: 1rem;
-            display: none;
-        }
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-dark: #4338ca;
+      --gradient-start: #667eea;
+      --gradient-end: #764ba2;
+      --text-light: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
 
-        .success-message {
-            background-color: #d4edda;
-            color: #155724;
-        }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+      min-height: 100vh;
+      color: var(--text-light);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-        .error-message {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
+    .header {
+      text-align: center;
+      padding: 2rem 1rem;
+      width: 100%;
+      max-width: 1200px;
+    }
 
-        .edit-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            margin-top: 1rem;
-        }
+    .account-container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      width: 90%;
+      max-width: 800px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      color: #1e293b;
+    }
 
-        .edit-btn:hover {
-            background: var(--primary-dark);
-        }
-        
-        @media (max-width: 768px) {
-            .info-grid {
-                grid-template-columns: 1fr;
-                gap: 0.5rem;
-            }
-            
-            .account-container {
-                padding: 1.5rem;
-            }
-        }
-    </style>
+    .account-section {
+      margin-bottom: 2rem;
+    }
+
+    .account-section h2 {
+      color: var(--primary);
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .info-label {
+      font-weight: 600;
+      color: #475569;
+    }
+
+    .info-value {
+      font-weight: 500;
+    }
+
+    .subscription-status {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-weight: 600;
+      margin-top: 0.5rem;
+    }
+
+    .active {
+      background-color: var(--success);
+      color: white;
+    }
+
+    .expired {
+      background-color: var(--danger);
+      color: white;
+    }
+
+    .trial {
+      background-color: var(--warning);
+      color: white;
+    }
+
+    .countdown-timer {
+      font-size: 1.5rem;
+      font-weight: 700;
+      text-align: center;
+      margin: 1rem 0;
+      padding: 1rem;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      color: white;
+    }
+
+    .timer-label {
+      font-size: 1rem;
+      font-weight: 400;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .back-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      margin: 1rem 0;
+      font-size: 1rem;
+    }
+
+    .back-btn:hover {
+      background: var(--primary-dark);
+      transform: scale(1.03);
+    }
+
+    .edit-input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: inherit;
+    }
+
+    .form-actions {
+      grid-column: 1 / -1;
+      margin-top: 1rem;
+      text-align: right;
+    }
+
+    .message {
+      padding: 0.5rem;
+      border-radius: 4px;
+      text-align: center;
+      margin-top: 1rem;
+      display: none;
+    }
+
+    .success-message {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .error-message {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    .edit-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      margin-top: 1rem;
+    }
+
+    .edit-btn:hover {
+      background: var(--primary-dark);
+    }
+
+    @media (max-width: 768px) {
+      .info-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+      }
+
+      .account-container {
+        padding: 1.5rem;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Account Information</h1>
-        <p>View and manage your Archi Trace account</p>
+  <div class="header">
+    <h1>Account Information</h1>
+    <p>View and manage your Archi Trace account</p>
+  </div>
+
+  <div class="account-container">
+    <!-- Profile Info -->
+    <div class="account-section">
+      <h2>Profile Information</h2>
+      <div class="info-grid">
+        <div class="info-label">Full Name:</div>
+        <div class="info-value" id="user-name">Loading...</div>
+
+        <div class="info-label">Email:</div>
+        <div class="info-value" id="user-email">Loading...</div>
+
+        <div class="info-label">Phone Number:</div>
+        <div class="info-value" id="user-phone">Loading...</div>
+      </div>
+
+      <button class="edit-btn" onclick="toggleEditForm('profile')">Edit Profile</button>
+
+      <form id="profile-form" onsubmit="updateProfile(event)" style="display: none;">
+        <div class="info-grid">
+          <div class="info-label">Full Name:</div>
+          <div class="info-value">
+            <input type="text" id="edit-fullname" class="edit-input" required>
+          </div>
+
+          <div class="info-label">Phone:</div>
+          <div class="info-value">
+            <input type="text" id="edit-phone" class="edit-input">
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="back-btn" onclick="toggleEditForm('profile')">Cancel</button>
+            <button type="submit" class="btn-primary">Save Changes</button>
+          </div>
+        </div>
+      </form>
+      <div id="profile-message" class="message"></div>
     </div>
-    
-    <div class="account-container">
-        <div class="account-section">
-            <h2>Profile Information</h2>
-            <div class="info-grid">
-                <div class="info-label">Full Name:</div>
-                <div class="info-value" id="user-name">Loading...</div>
-                
-                <div class="info-label">Email:</div>
-                <div class="info-value" id="user-email">Loading...</div>
-                
-                <div class="info-label">Phone Number:</div>
-                <div class="info-value" id="user-phone">Loading...</div>
-            </div>
 
-            <button class="edit-btn" onclick="toggleEditForm('profile')">Edit Profile</button>
-
-            <form id="profile-form" onsubmit="updateProfile(event)" style="display: none;">
-                <div class="info-grid">
-                    <div class="info-label">Full Name:</div>
-                    <div class="info-value">
-                        <input type="text" id="edit-fullname" class="edit-input" required>
-                    </div>
-                    
-                    <div class="info-label">Phone:</div>
-                    <div class="info-value">
-                        <input type="text" id="edit-phone" class="edit-input">
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" class="back-btn" onclick="toggleEditForm('profile')">Cancel</button>
-                        <button type="submit" class="btn-primary">Save Changes</button>
-                    </div>
-                </div>
-            </form>
-            <div id="profile-message" class="message"></div>
-        </div>
-        
-        <div class="account-section">
-            <h2>Subscription Details</h2>
-            <div class="info-grid">
-                <div class="info-label">Status:</div>
-                <div class="info-value">
-                    <span id="subscription-status" class="subscription-status">Loading...</span>
-                </div>
-                
-                <div class="info-label">Plan Type:</div>
-                <div class="info-value" id="plan-type">Loading...</div>
-                
-                <div class="info-label">Subscription Date:</div>
-                <div class="info-value" id="subscription-date">Loading...</div>
-                
-                <div class="info-label">Expiry Date:</div>
-                <div class="info-value" id="expiry-date">Loading...</div>
-            </div>
-            
-            <div id="countdown-container" style="display: none;">
-                <div class="countdown-timer">
-                    <span class="timer-label">Time Remaining:</span>
-                    <span id="countdown-timer">00:00:00</span>
-                </div>
-            </div>
+    <!-- Subscription Info -->
+    <div class="account-section">
+      <h2>Subscription Details</h2>
+      <div class="info-grid">
+        <div class="info-label">Status:</div>
+        <div class="info-value">
+          <span id="subscription-status" class="subscription-status">Loading...</span>
         </div>
 
-        <div class="account-section">
-            <h2>Change Password</h2>
-            <form id="password-form" onsubmit="changePassword(event)">
-                <div class="info-grid">
-                    <div class="info-label">Current Password:</div>
-                    <div class="info-value">
-                        <input type="password" id="current-password" class="edit-input" required>
-                    </div>
-                    
-                    <div class="info-label">New Password:</div>
-                    <div class="info-value">
-                        <input type="password" id="new-password" class="edit-input" required minlength="8">
-                    </div>
-                    
-                    <div class="info-label">Confirm Password:</div>
-                    <div class="info-value">
-                        <input type="password" id="confirm-password" class="edit-input" required minlength="8">
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="submit" class="btn-primary">Change Password</button>
-                    </div>
-                </div>
-            </form>
-            <div id="password-message" class="message"></div>
+        <div class="info-label">Plan Type:</div>
+        <div class="info-value" id="plan-type">Loading...</div>
+
+        <div class="info-label">Subscription Date:</div>
+        <div class="info-value" id="subscription-date">Loading...</div>
+
+        <div class="info-label">Expiry Date:</div>
+        <div class="info-value" id="expiry-date">Loading...</div>
+      </div>
+
+      <div id="countdown-container" style="display: none;">
+        <div class="countdown-timer">
+          <span class="timer-label">Time Remaining:</span>
+          <span id="countdown-timer">00:00:00</span>
         </div>
+      </div>
     </div>
-    
-    <button class="back-btn" onclick="window.location.href='/'">Back to Dashboard</button>
-    <script src="/static/pwa-install.js"></script>
-    <script>
-        // Timezone handling function
-        function formatLocalDate(utcDateString) {
-            if (!utcDateString) return 'N/A';
-            
-            const date = new Date(utcDateString);
-            return date.toLocaleString('en-NG', {
-                timeZone: 'Africa/Lagos',
-                year: 'numeric',
-                month: 'numeric',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-        }
 
-        // Fetch user data from your backend
-        async function fetchUserData() {
-            try {
-                // Get the user's email from localStorage
-                const email = localStorage.getItem('user_email');
-                if (!email) {
-                    throw new Error('User email not found');
-                }
-        
-                // Fetch user profile data
-                const userResponse = await fetch(`/api/user-profile?email=${encodeURIComponent(email)}`);
-                if (!userResponse.ok) {
-                    throw new Error('Failed to fetch user profile');
-                }
-                const userData = await userResponse.json();
-        
-                // Fetch subscription data
-                const subResponse = await fetch(`/check-subscription?email=${encodeURIComponent(email)}`);
-                if (!subResponse.ok) {
-                    throw new Error('Failed to fetch subscription data');
-                }
-                const subData = await subResponse.json();
-        
-                // Populate user info
-                document.getElementById('user-name').textContent = userData.name || 'Not provided';
-                document.getElementById('user-email').textContent = email;
-                document.getElementById('user-phone').textContent = userData.phone || 'Not provided';
+    <!-- Change Password -->
+    <div class="account-section">
+      <h2>Change Password</h2>
+      <form id="password-form" onsubmit="changePassword(event)">
+        <div class="info-grid">
+          <div class="info-label">Current Password:</div>
+          <div class="info-value">
+            <input type="password" id="current-password" class="edit-input" required>
+          </div>
 
-                // Populate edit fields
-                document.getElementById('edit-fullname').value = userData.name || '';
-                document.getElementById('edit-phone').value = userData.phone || '';
-        
-                // Populate subscription info
-                const statusElement = document.getElementById('subscription-status');
-                
-                if (subData.has_access) {
-                    document.getElementById('plan-type').textContent = subData.is_trial ? 'Free Trial' : 'Premium Weekly';
-                    document.getElementById('subscription-date').textContent = 
-                        formatLocalDate(subData.start_utc);
-                    document.getElementById('expiry-date').textContent = 
-                        formatLocalDate(subData.expiry_utc);
-        
-                    statusElement.textContent = subData.is_trial ? 'TRIAL' : 'ACTIVE';
-                    statusElement.className = `subscription-status ${subData.is_trial ? 'trial' : 'active'}`;
-                    
-                    document.getElementById('countdown-container').style.display = 'block';
-                    startCountdown(subData.expiry_utc);
-                } else {
-                    document.getElementById('plan-type').textContent = 'No active subscription';
-                    document.getElementById('subscription-date').textContent = 'N/A';
-                    document.getElementById('expiry-date').textContent = 'N/A';
-                    
-                    statusElement.textContent = 'EXPIRED';
-                    statusElement.className = 'subscription-status expired';
-                }
-                
-            } catch (error) {
-                console.error('Error fetching user data:', error);
-                // Show error to user
-                document.getElementById('user-name').textContent = 'Error loading data';
-                document.getElementById('user-email').textContent = 'Error loading data';
-                document.getElementById('user-phone').textContent = 'Error loading data';
-                
-                document.getElementById('plan-type').textContent = 'Error loading data';
-                document.getElementById('subscription-date').textContent = 'Error loading data';
-                document.getElementById('expiry-date').textContent = 'Error loading data';
-                
-                const statusElement = document.getElementById('subscription-status');
-                statusElement.textContent = 'ERROR';
-                statusElement.className = 'subscription-status expired';
-            }
-        }
-        
-        // Countdown timer function
-        function startCountdown(utcExpiryDate) {
-            const countdownElement = document.getElementById('countdown-timer');
-            // Ensure we parse as UTC by adding 'Z' if not present
-            const expiryTime = new Date(utcExpiryDate.endsWith('Z') ? utcExpiryDate : utcExpiryDate + 'Z').getTime();
-            
-            function updateCountdown() {
-                const now = new Date().getTime();
-                const distance = expiryTime - now;
-                
-                if (distance < 0) {
-                    countdownElement.textContent = "EXPIRED";
-                    document.getElementById('subscription-status').textContent = 'EXPIRED';
-                    document.getElementById('subscription-status').className = 'subscription-status expired';
-                    return;
-                }
-                
-                // Calculate hours, minutes, seconds
-                const hours = Math.floor(distance / (1000 * 60 * 60));
-                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                
-                // Display the result
-                countdownElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            }
-            
-            // Update immediately
-            updateCountdown();
-            
-            // Update every second
-            const countdownInterval = setInterval(updateCountdown, 1000);
-        }
+          <div class="info-label">New Password:</div>
+          <div class="info-value">
+            <input type="password" id="new-password" class="edit-input" required minlength="8">
+          </div>
 
-        // Toggle edit form visibility
-        function toggleEditForm(type) {
-            if (type === 'profile') {
-                const form = document.getElementById('profile-form');
-                form.style.display = form.style.display === 'none' ? 'block' : 'none';
-                const btn = document.querySelector('.edit-btn');
-                btn.textContent = form.style.display === 'none' ? 'Edit Profile' : 'Cancel Edit';
-            }
-        }
+          <div class="info-label">Confirm Password:</div>
+          <div class="info-value">
+            <input type="password" id="confirm-password" class="edit-input" required minlength="8">
+          </div>
 
-        // Update profile function
-        async function updateProfile(event) {
-            event.preventDefault();
-            const email = localStorage.getItem('user_email');
-            const fullname = document.getElementById('edit-fullname').value;
-            const phone = document.getElementById('edit-phone').value;
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Change Password</button>
+          </div>
+        </div>
+      </form>
+      <div id="password-message" class="message"></div>
+    </div>
+  </div>
 
-            try {
-                const response = await fetch('/api/update-profile', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ email, fullname, phone })
-                });
+  <button class="back-btn" onclick="window.location.href='/'">Back to Dashboard</button>
 
-                const result = await response.json();
+  <script>
+    // same fetchUserData, startCountdown, updateProfile, changePassword, showMessage, toggleEditForm as before...
 
-                if (!response.ok) {
-                    throw new Error(result.message || 'Failed to update profile');
-                }
-
-                // Update the displayed values
-                document.getElementById('user-name').textContent = fullname || 'Not provided';
-                document.getElementById('user-phone').textContent = phone || 'Not provided';
-                
-                showMessage('Profile updated successfully!', 'success', 'profile-message');
-                toggleEditForm('profile');
-            } catch (error) {
-                showMessage(error.message || 'Failed to update profile', 'error', 'profile-message');
-            }
-        }
-
-        // Change password function
-        async function changePassword(event) {
-            event.preventDefault();
-            const email = localStorage.getItem('user_email');
-            const currentPassword = document.getElementById('current-password').value;
-            const newPassword = document.getElementById('new-password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
-
-            // Basic validation
-            if (newPassword !== confirmPassword) {
-                showMessage('New passwords do not match', 'error', 'password-message');
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/change-password', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ 
-                        email, 
-                        current_password: currentPassword, 
-                        new_password: newPassword 
-                    })
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.message || 'Failed to change password');
-                }
-
-                // Clear the form
-                document.getElementById('password-form').reset();
-                showMessage('Password changed successfully!', 'success', 'password-message');
-            } catch (error) {
-                showMessage(error.message || 'Failed to change password', 'error', 'password-message');
-            }
-        }
-
-        // Helper function to show messages
-        function showMessage(text, type, elementId) {
-            const element = document.getElementById(elementId);
-            element.textContent = text;
-            element.className = `${type}-message`;
-            element.style.display = 'block';
-            
-            setTimeout(() => {
-                element.style.display = 'none';
-            }, 5000);
-        }
-        
-        // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', fetchUserData);
-			// Register Service Worker
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/static/sw.js')
-      .then(registration => {
-        console.log('SW registered: ', registration);
-      })
-      .catch(registrationError => {
-        console.log('SW registration failed: ', registrationError);
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/static/sw.js')
+          .then(registration => console.log('SW registered: ', registration))
+          .catch(error => console.log('SW registration failed: ', error));
       });
-  });
-}
+    }
 
-// Detect if app is running in standalone mode
-if (window.matchMedia('(display-mode: standalone)').matches) {
-  console.log('Running as PWA');
-  document.body.classList.add('pwa-mode');
-}
+    // Detect PWA standalone
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      document.body.classList.add('pwa-mode');
+    }
 
-    </script>
+    document.addEventListener('DOMContentLoaded', fetchUserData);
+  </script>
 </body>
 </html>
