@@ -2,17 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0", maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#000000">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#764ba2">
   <title>Archi Tracer App</title>
+
+  <!-- Styles -->
   <link rel="stylesheet" href="../static/style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-		<!-- SIMPLE PWA META TAGS -->
-	<meta name="apple-mobile-web-app-capable" content="yes">
-	<meta name="apple-mobile-web-app-title" content="Archi Trace">
-	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-	<meta name="theme-color" content="#764ba2">
-	<meta name="mobile-web-app-capable" content="yes">
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json">
+
+  <!-- Apple iOS PWA Meta -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Archi Trace">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" href="/static/icons/icon-192x192.png">
+  <link rel="icon" href="/static/icons/icon-192x192.png" type="image/png">
 </head>
 <body>
   <div id="app">
@@ -22,12 +31,13 @@
     <button id="nav-toggle">
       <i class="fas fa-chevron-right"></i>
     </button>
+
     <!-- Left Nav -->
     <div id="nav-menu">
-        <button id="reset-btn">Reset Image</button>
-        <div id="image-thumbnails"></div>
-        <button id="add-image-btn">+<br>add image</button>
-        <button id="reset-all-btn">Reset All</button>
+      <button id="reset-btn">Reset Image</button>
+      <div id="image-thumbnails"></div>
+      <button id="add-image-btn">+<br>add image</button>
+      <button id="reset-all-btn">Reset All</button>
     </div>
 
     <!-- Right Nav -->
@@ -66,69 +76,48 @@
       </div>
     </div>
   </div>
+
+  <!-- Custom Install Button -->
+  <button id="install-btn" style="display:none; position:fixed; bottom:20px; right:20px; padding:10px 15px; background:#764ba2; color:white; border:none; border-radius:8px; cursor:pointer; z-index:1000;">
+    Install App
+  </button>
+
+  <!-- Install Prompt Script -->
   <script>
-// Simple access check for AR page
-document.addEventListener('DOMContentLoaded', async () => {
-    const email = localStorage.getItem('user_email') || 
-                 new URLSearchParams(window.location.search).get('email');
-    
-    if (!email) {
-        window.location.href = '/payment';
-        return;
-    }
-    
-    // Verify subscription
-    try {
-        const response = await fetch(`/check-subscription?email=${encodeURIComponent(email)}`);
-        if (!response.ok || !(await response.json()).has_access) {
-            window.location.href = '/payment';
-        }
-    } catch {
-        window.location.href = '/payment';
-    }
-});
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
 
-// Simple install prompt for Android
-let deferredPrompt;
+      const installBtn = document.getElementById('install-btn');
+      if (installBtn) {
+          installBtn.style.display = 'block';
+          installBtn.onclick = () => {
+              deferredPrompt.prompt();
+              deferredPrompt.userChoice.then(() => {
+                  installBtn.style.display = 'none';
+              });
+          };
+      }
+  });
 
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    
-    // Show custom install button (optional)
-    const installBtn = document.getElementById('install-btn');
-    if (installBtn) {
-        installBtn.style.display = 'block';
-        installBtn.onclick = () => {
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then(() => {
-                installBtn.style.display = 'none';
-            });
-        };
+  window.addEventListener('appinstalled', () => {
+      const installBtn = document.getElementById('install-btn');
+      if (installBtn) installBtn.style.display = 'none';
+  });
+  </script>
+
+  <!-- Register Service Worker -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js")
+        .then(reg => console.log("Service Worker registered:", reg.scope))
+        .catch(err => console.error("Service Worker registration failed:", err));
     }
-});
+  </script>
 
-// Hide button if already installed
-window.addEventListener('appinstalled', () => {
-    const installBtn = document.getElementById('install-btn');
-    if (installBtn) installBtn.style.display = 'none';
-});
-</script>
-  
+  <!-- External Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@interactjs/interactjs/index.min.js"></script>
   <script src="/static/script.js"></script>
-
-
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
