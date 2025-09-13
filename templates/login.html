@@ -3,16 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <title>Login / Register</title>
-		<!-- SIMPLE PWA SETUP -->
-		<!-- SIMPLE PWA META TAGS -->
-		<meta name="apple-mobile-web-app-capable" content="yes">
-		<meta name="apple-mobile-web-app-title" content="Archi Trace">
-		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-		<meta name="theme-color" content="#764ba2">
-		<meta name="mobile-web-app-capable" content="yes">
 
-		<!-- Viewport for mobile -->
-		<meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover">
+    <!-- PWA manifest & theme -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#764ba2">
+
+    <!-- SIMPLE PWA META TAGS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Archi Trace">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- Viewport for mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover">
+
     <style>
         body {
             margin: 0;
@@ -143,7 +147,7 @@
                 email: document.getElementById("loginEmail").value,
                 password: document.getElementById("loginPassword").value
             };
-            
+
             try {
                 const res = await fetch("/api/login", {
                     method: "POST",
@@ -151,28 +155,24 @@
                     body: JSON.stringify(data),
                     credentials: "include"  // CRITICAL FOR COOKIES
                 });
-                
+
                 const result = await res.json();
-                
+
                 if (!res.ok) {
                     message.textContent = "❌ " + (result.detail || "Login failed");
                     return;
                 }
-        
-                        // ===== ADD THESE 2 LINES ===== //
-                // Store email in localStorage before redirect
+
+                // Save user info
                 localStorage.setItem('user_email', data.email);
                 localStorage.setItem('user_id', result.user_id);
-                // ============================= //
 
                 message.textContent = "✅ " + result.message;
-                console.log("Login response:", result);  // Debug log
-                
-                // Use the backend's redirect_to instead of hardcoding
+                console.log("Login response:", result);
+
                 if (result.redirect_to) {
                     window.location.href = result.redirect_to;
                 } else {
-                    console.error("No redirect_to in response");
                     window.location.href = "/dashboard.html";  // Fallback
                 }
             } catch (error) {
@@ -189,41 +189,44 @@
                 email: document.getElementById("regEmail").value,
                 password: document.getElementById("regPassword").value
             };
-            
+
             try {
                 const res = await fetch("/api/register", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(user),
-                    credentials: "include"  // For consistency
+                    credentials: "include"
                 });
-                
+
                 const result = await res.json();
-                
+
                 if (!res.ok) {
                     message.textContent = "❌ " + (result.detail || "Registration failed");
                     return;
                 }
 
                 message.textContent = "✅ " + result.message;
-                console.log("Registration response:", result);  // Debug log
-                
-                // Redirect to onboarding for new users
+                console.log("Registration response:", result);
+
                 if (result.redirect_to) {
                     window.location.href = result.redirect_to;
                 } else {
-                    window.location.href = "/onboarding";  // Fallback
+                    window.location.href = "/onboarding";
                 }
             } catch (error) {
                 console.error("Registration error:", error);
                 message.textContent = "❌ Network error";
             }
         });
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then(reg => console.log('SW registered: ', reg))
+                    .catch(err => console.log('SW registration failed: ', err));
+            });
+        }
     </script>
 </body>
 </html>
-
-
-
-
-
