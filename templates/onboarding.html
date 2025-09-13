@@ -2,23 +2,25 @@
 <html>
 <head>
     <title>Welcome to AR Tracer</title>
-		<!-- Manifest -->
-		<link rel="manifest" href="/static/manifest.json">
-		<!-- === ADD THIS LINE === -->
-	    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏗️</text></svg>">
-	    <!-- ==================== -->
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="/static/manifest.json">
 
-				<!-- SIMPLE PWA META TAGS -->
-		<meta name="apple-mobile-web-app-capable" content="yes">
-		<meta name="apple-mobile-web-app-title" content="Archi Trace">
-		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-		<meta name="theme-color" content="#764ba2">
-		<meta name="mobile-web-app-capable" content="yes">
+    <!-- Favicon (emoji as icon fallback) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 
+    viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏗️</text></svg>">
 
-		<!-- Viewport for mobile -->
-		<meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover">
+    <!-- Simple PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Archi Trace">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#764ba2">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- Viewport for mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
     <style>
-        /* Keep your existing styles */
         body, html { margin: 0; padding: 0; height: 100%; }
         .onboarding-container { position: relative; width: 100%; height: 100%; }
         .onboarding-image { 
@@ -48,7 +50,6 @@
 </head>
 <body>
     <div class="onboarding-container">
-        <!-- Use absolute paths with your domain -->
         <img src="https://archisketch.onrender.com/static/onboarding/onboarding1.jpg" 
              class="onboarding-image active" id="image1">
         <img src="https://archisketch.onrender.com/static/onboarding/onboarding2.jpg" 
@@ -87,7 +88,7 @@
             try {
                 nextButton.disabled = true;
                 nextButton.textContent = 'Loading...';
-                
+
                 const formData = new URLSearchParams();
                 formData.append('user_id', userId);
 
@@ -127,7 +128,3 @@
     </script>
 </body>
 </html>
-
-
-
-
