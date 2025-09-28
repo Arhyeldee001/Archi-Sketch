@@ -2,375 +2,270 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Archi Trace - Tutorials</title>
+    <title>Subscribe - Archi Trace</title>
 
-                <!-- SIMPLE PWA META TAGS -->
-                <meta name="apple-mobile-web-app-capable" content="yes">
-                <meta name="apple-mobile-web-app-title" content="Archi Trace">
-                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-                <meta name="theme-color" content="#764ba2">
-                <meta name="mobile-web-app-capable" content="yes">
+    <!-- Manifest -->
+    <link rel="manifest" href="/static/manifest.json">
 
-                <!-- Android Chrome -->
-                <meta name="mobile-web-app-capable" content="yes">
-                <!-- Theme Color -->
-                <meta name="theme-color" content="#764ba2">
+    <!-- Favicon (emoji fallback) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 
+    viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏗️</text></svg>">
 
-                <!-- Viewport for mobile -->
-                <meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover">
+    <!-- Simple PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Archi Trace">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#764ba2">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- Viewport for mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
     <style>
-        :root {
-            --primary: #4f46e5;
-            --primary-dark: #4338ca;
-            --gradient-start: #667eea;
-            --gradient-end: #764ba2;
-            --text-light: #f8fafc;
-            --text-muted: #94a3b8;
-        }
-
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
-            min-height: 100vh;
-            color: var(--text-light);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: white;
         }
-
-        .header {
-            text-align: center;
-            padding: 2rem 1rem;
-            width: 100%;
-            max-width: 1200px;
+        .container {
+            background: linear-gradient(135deg, #667eea, #764ba2);            
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin: 0 0 0.5rem;
-            font-weight: 700;
-            line-height: 1.2;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-
-        .slideshow-container {
-            position: relative;
-            width: 90%;
-            max-width: 1080px;
-            height: 90vh;
-            max-height: 1920px;
-            margin: 2rem auto;
-            overflow: hidden;
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            aspect-ratio: 9/16;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .slide {
-            display: none;
-            width: 100%;
-            height: 100%;
-            position: relative;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .slide.active {
-            display: flex;
-        }
-
-        .slide-image-container {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .slide img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            background: #000;
-        }
-
-        .slide-caption {
+        .plan-option {
+            border: 1px solid #ddd;
             padding: 1.5rem;
-            background: rgba(255, 255, 255, 0.95);
-            color: #1e293b;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .slide-caption h3 {
-            margin: 0 0 0.5rem;
-            font-size: 1.5rem;
-        }
-
-        .slide-caption p {
-            margin: 0;
-            line-height: 1.5;
-        }
-
-        .prev, .next {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 50px;
-            height: 50px;
-            background: rgba(255, 255, 255, 0.3);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            font-size: 1.5rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-        }
-
-        .prev:hover, .next:hover {
-            background: rgba(255, 255, 255, 0.5);
-        }
-
-        .prev {
-            left: 20px;
-        }
-
-        .next {
-            right: 20px;
-        }
-
-        .dots-container {
-            text-align: center;
-            padding: 1rem 0;
-        }
-
-        .dot {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            margin: 0 5px;
-            background-color: rgba(255, 255, 255, 0.5);
-            border-radius: 50%;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .dot.active {
-            background-color: white;
-        }
-
-        .back-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
             margin: 1rem 0;
-            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
         }
-
-        .back-btn:hover {
-            background: var(--primary-dark);
-            transform: scale(1.03);
+        .plan-option:hover {
+            border-color: #3d5afe;
+            background: #f8f9ff;
         }
-
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .slideshow-container {
-                height: 80vh;
-                max-height: none;
-            }
-
-            .prev, .next {
-                width: 40px;
-                height: 40px;
-                font-size: 1.2rem;
-            }
-
-            .slide-caption {
-                padding: 1rem;
-            }
-
-            .slide-caption h3 {
-                font-size: 1.2rem;
-            }
+        #user-email {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 1rem;
+            font-size: 16px;
+        }
+        button {
+            background: white;
+            color: black;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #2c4bff;
+            color: white;
+        }
+        #status-message {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Archi Trace Tutorials</h1>
-        <p>Learn how to use Archi Trace to trace effectively</p>
+    <div class="container">
+        <h1>Choose Your Plan</h1>
+
+        <div style="display: flex; justify-content: center; margin: 2rem 0;">
+            <div style="width: 100%; max-width: 400px;">
+                <input 
+                    type="email" 
+                    id="user-email" 
+                    placeholder="your@email.com" 
+                    required
+                >
+            </div>
+        </div>
+
+        <div class="plan-option" onclick="selectPlan('trial')">
+            <h3>1-Hour Free Trial</h3>
+            <p>Experience all features for 1 hour</p>
+        </div>
+
+        <div class="plan-option" onclick="selectPlan('premium')">
+            <h3>Premium Daily Access</h3>
+            <p>₦300 - Full features for 1 day</p>
+        </div>
+
+        <button id="confirm-btn" style="display:none;">Continue</button>
+        <div id="status-message"></div>
     </div>
-
-    <div class="slideshow-container">
-        <!-- Slide 1 -->
-        <div class="slide active">
-            <div class="slide-image-container">
-                <img src="/static/templates/slide1.gif" alt="Tutorial Step 1">
-            </div>
-            <div class="slide-caption">
-                <h3>Getting Started</h3>
-                <p>After sign up or login, you would be propted to your dashboard where you would proceed to the tracer app as shown above.</p>
-            </div>
-        </div>
-
-        <!-- Slide 2 -->
-        <div class="slide">
-            <div class="slide-image-container">
-                <img src="/static/templates/slide2.gif" alt="Tutorial Step 2">
-            </div>
-            <div class="slide-caption">
-                <h3>Payment</h3>
-                <p>To use Archi Trace you would have to subscribe for a little token of 500 NGN for 3 days, select you plan and pay as shown above.</p>
-            </div>
-        </div>
-
-        <!-- Slide 3 -->
-        <div class="slide">
-            <div class="slide-image-container">
-                <img src="/static/templates/slide3.gif" alt="Tutorial Step 3">
-            </div>
-            <div class="slide-caption">
-                <h3>Allow Camera</h3>
-                <p>Archi Trace uses your camera to help you trace effectively for the best experience, so allow camera access and proceed.</p>
-            </div>
-        </div>
-
-        <!-- Slide 4 -->
-        <div class="slide">
-            <div class="slide-image-container">
-                <img src="/static/templates/slide4.gif" alt="Tutorial Step 4">
-            </div>
-            <div class="slide-caption">
-                <h3>Import image</h3>
-                <p>Upon successful payment and camera access, you would gain full access to the app where you would upload your image and trace as shown above.</p>
-            </div>
-        </div>
-
-
-
-        <!-- Slide 5 -->
-        <div class="slide">
-            <div class="slide-image-container">
-                <img src="/static/templates/slide5.png" alt="Tutorial Step 5">
-            </div>
-            <div class="slide-caption">
-                <h3>Successful Import</h3>
-                <p>When you import your image it will appear as such on the screen and then you move to next step.</p>
-            </div>
-        </div>
-
-        <!-- Slide 6 -->
-        <div class="slide">
-            <div class="slide-image-container">
-                <img src="/static/templates/slide6.png" alt="Tutorial Step 6">
-            </div>
-            <div class="slide-caption">
-                <h3>Prepration</h3>
-                <p>Get a phone stand, tumbler or any object with a prefareble vertical height and place it on your paper, place the phone on top of the cup as illustrated above.</p>
-            </div>
-        </div>
-        <!-- Slide 7 -->
-        <div class="slide">
-            <div class="slide-image-container">
-                <img src="/static/templates/slide7.png" alt="Tutorial Step 7">
-            </div>
-            <div class="slide-caption">
-                <h3>Alignment and Scaling</h3>
-                <p>On your phone reduce the opacity to let you see through the image you want to Trace, drag, pinch, zoom to perfared scale and alignment, u can activte the grid line in the right panel to help with that.</p>
-            </div>
-        </div>
-        <!-- Slide 8 -->
-        <div class="slide">
-            <div class="slide-image-container">
-                <img src="/static/templates/slide8.png" alt="Tutorial Step 8">
-            </div>
-            <div class="slide-caption">
-                <h3>Import other projects</h3>
-                <p>You can also use the left panel to import more images.</p>
-            </div>
-        </div>
-        <!-- Slide 9 -->
-        <div class="slide">
-            <div class="slide-image-container">
-                <img src="/static/templates/slide9.png" alt="Tutorial Step 9">
-            </div>
-            <div class="slide-caption">
-                <h3>Enjoy the experience</h3>
-                <p>It is important to make sure your cup or phone stand is stable, and for beginners it is advice to trace slowly to fully get aquinted with the rhythm of drawing, Enjoy!!.</p>
-            </div>
-        </div>
-        <!-- Navigation arrows -->
-        <button class="prev" onclick="changeSlide(-1)">❮</button>
-        <button class="next" onclick="changeSlide(1)">❯</button>
-    </div>
-
-    <div class="dots-container">
-        <span class="dot active" onclick="currentSlide(1)"></span>
-        <span class="dot" onclick="currentSlide(2)"></span>
-        <span class="dot" onclick="currentSlide(3)"></span>
-        <span class="dot" onclick="currentSlide(4)"></span>
-        <span class="dot" onclick="currentSlide(5)"></span>
-        <span class="dot" onclick="currentSlide(6)"></span>
-        <span class="dot" onclick="currentSlide(7)"></span>
-        <span class="dot" onclick="currentSlide(8)"></span>
-        <span class="dot" onclick="currentSlide(9)"></span>
-    </div>
-
-    <button class="back-btn" onclick="window.location.href='/'">Back to Dashboard</button>
 
     <script>
-        let slideIndex = 1;
+        class PaymentSystem {
+            constructor() {
+                this.selectedPlan = null;
+                this.emailInput = document.getElementById('user-email');
+                this.confirmBtn = document.getElementById('confirm-btn');
+                this.statusEl = document.getElementById('status-message');
 
-        function showSlides(n) {
-            let i;
-            let slides = document.getElementsByClassName("slide");
-            let dots = document.getElementsByClassName("dot");
+                // Initialize with email if available
+                const urlParams = new URLSearchParams(window.location.search);
+                const email = urlParams.get('email') || localStorage.getItem('user_email');
+                if (email) this.emailInput.value = email;
 
-            if (n > slides.length) {slideIndex = 1}
-            if (n < 1) {slideIndex = slides.length}
-
-            for (i = 0; i < slides.length; i++) {
-                slides[i].classList.remove("active");
+                this.setupEvents();
+                this.handlePaymentResult();
             }
 
-            for (i = 0; i < dots.length; i++) {
-                dots[i].classList.remove("active");
+            setupEvents() {
+                this.confirmBtn.addEventListener('click', () => {
+                    if (this.selectedPlan === 'trial') {
+                        this.startTrial();
+                    } else {
+                        this.payNow();
+                    }
+                });
             }
 
-            slides[slideIndex-1].classList.add("active");
-            dots[slideIndex-1].classList.add("active");
+            selectPlan(plan) {
+                this.selectedPlan = plan;
+                this.confirmBtn.style.display = 'block';
+                this.confirmBtn.textContent = plan === 'trial' 
+                    ? "Start Free Trial" 
+                    : "Pay Now (₦300)";
+            }
+
+            async startTrial() {
+                const email = this.emailInput.value;
+                if (!email) return this.showMessage("Please enter your email", "error");
+
+                this.confirmBtn.disabled = true;
+
+                try {
+                    const response = await fetch('/initiate-trial', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email })
+                    });
+
+                    if (!response.ok) throw await response.json();
+
+                    const { expiry_date } = await response.json();
+                    localStorage.setItem('user_email', email);
+                    this.showMessage("Trial activated! Redirecting...", "success");
+
+                    setTimeout(() => {
+                        window.location.href = `/ar?email=${encodeURIComponent(email)}`;
+                    }, 1500);
+
+                } catch (error) {
+                    this.showMessage(error.detail || "Trial activation failed", "error");
+                } finally {
+                    this.confirmBtn.disabled = false;
+                }
+            }
+
+            async payNow() {
+                const email = this.emailInput.value;
+                if (!email) return this.showMessage("Please enter your email", "error");
+
+                this.confirmBtn.disabled = true;
+                this.showMessage("Processing payment...", "success");
+
+                try {
+                    console.log("Initiating payment for:", email);
+                    const response = await fetch('/initiate-payment', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ email })
+                    });
+
+                    const responseData = await response.json();
+                    console.log("Payment response:", responseData);
+
+                    if (!response.ok) {
+                        throw new Error(responseData.detail || "Payment initiation failed");
+                    }
+
+                    if (!responseData.payment_url) {
+                        throw new Error("No payment URL received from server");
+                    }
+
+                    // Store email before redirecting
+                    localStorage.setItem('user_email', email);
+
+                    // Force redirect
+                    window.location.replace(responseData.payment_url);
+
+                } catch (error) {
+                    console.error("Payment error:", error);
+                    this.showMessage(
+                        error.message.includes("Failed to fetch") 
+                            ? "Network error - please check your connection"
+                            : error.message,
+                        "error"
+                    );
+                } finally {
+                    this.confirmBtn.disabled = false;
+                }
+            }
+
+            handlePaymentResult() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const status = urlParams.get('payment');
+
+                if (status === 'success') {
+                    this.showMessage("Payment successful! Redirecting...", "success");
+                    setTimeout(() => {
+                        window.location.href = `/ar?email=${encodeURIComponent(localStorage.getItem('user_email'))}`;
+                    }, 1500);
+                } else if (status === 'failed') {
+                    this.showMessage("Payment failed. Please try again.", "error");
+                }
+            }
+
+            showMessage(text, type) {
+                this.statusEl.textContent = text;
+                this.statusEl.className = type;
+                this.statusEl.style.display = "block";
+                setTimeout(() => {
+                    this.statusEl.style.display = 'none';
+                }, 5000);
+            }
         }
 
-        function changeSlide(n) {
-            showSlides(slideIndex += n);
-        }
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            const payment = new PaymentSystem();
 
-        function currentSlide(n) {
-            showSlides(slideIndex = n);
-        }
-
-        // Auto-advance slides every 8 seconds
-        //setInterval(() => {
-            //changeSlide(1);
-        //}, 8000);
+            // Plan selection handlers
+            window.selectPlan = (plan) => {
+                document.querySelectorAll('.plan-option').forEach(el => {
+                    el.style.borderColor = '#ddd';
+                    el.style.backgroundColor = '';
+                });
+                event.currentTarget.style.borderColor = '#3d5afe';
+                event.currentTarget.style.backgroundColor = '#f8f9ff';
+                payment.selectPlan(plan);
+            };
+        });
     </script>
 </body>
 </html>
