@@ -1,7 +1,7 @@
 {
   "name": "Archi Trace",
   "short_name": "ArchiTrace",
-  "start_url": "/dashboard.html",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#764ba2",
