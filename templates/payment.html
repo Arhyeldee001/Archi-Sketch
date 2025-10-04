@@ -115,157 +115,176 @@
     </div>
 
     <script>
-        class PaymentSystem {
-            constructor() {
-                this.selectedPlan = null;
-                this.emailInput = document.getElementById('user-email');
-                this.confirmBtn = document.getElementById('confirm-btn');
-                this.statusEl = document.getElementById('status-message');
+    async function checkSubscription() {
+        const email = localStorage.getItem('user_email');
+        if (!email) return; // no email saved, skip check
 
-                // Initialize with email if available
-                const urlParams = new URLSearchParams(window.location.search);
-                const email = urlParams.get('email') || localStorage.getItem('user_email');
-                if (email) this.emailInput.value = email;
+        try {
+            const response = await fetch(`/api/check-subscription?email=${encodeURIComponent(email)}`);
+            if (!response.ok) return;
 
-                this.setupEvents();
-                this.handlePaymentResult();
+            const data = await response.json();
+            if (data.active) {
+                // If subscription is active, skip payment page
+                window.location.href = `/index.html?email=${encodeURIComponent(email)}`;
             }
+        } catch (err) {
+            console.error("Subscription check failed:", err);
+        }
+    }
 
-            setupEvents() {
-                this.confirmBtn.addEventListener('click', () => {
-                    if (this.selectedPlan === 'trial') {
-                        this.startTrial();
-                    } else {
-                        this.payNow();
-                    }
+    class PaymentSystem {
+        constructor() {
+            this.selectedPlan = null;
+            this.emailInput = document.getElementById('user-email');
+            this.confirmBtn = document.getElementById('confirm-btn');
+            this.statusEl = document.getElementById('status-message');
+
+            // Initialize with email if available
+            const urlParams = new URLSearchParams(window.location.search);
+            const email = urlParams.get('email') || localStorage.getItem('user_email');
+            if (email) this.emailInput.value = email;
+
+            this.setupEvents();
+            this.handlePaymentResult();
+        }
+
+        setupEvents() {
+            this.confirmBtn.addEventListener('click', () => {
+                if (this.selectedPlan === 'trial') {
+                    this.startTrial();
+                } else {
+                    this.payNow();
+                }
+            });
+        }
+
+        selectPlan(plan) {
+            this.selectedPlan = plan;
+            this.confirmBtn.style.display = 'block';
+            this.confirmBtn.textContent = plan === 'trial' 
+                ? "Start Free Trial" 
+                : "Pay Now (₦300)";
+        }
+
+        async startTrial() {
+            const email = this.emailInput.value;
+            if (!email) return this.showMessage("Please enter your email", "error");
+
+            this.confirmBtn.disabled = true;
+
+            try {
+                const response = await fetch('/initiate-trial', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
                 });
-            }
 
-            selectPlan(plan) {
-                this.selectedPlan = plan;
-                this.confirmBtn.style.display = 'block';
-                this.confirmBtn.textContent = plan === 'trial' 
-                    ? "Start Free Trial" 
-                    : "Pay Now (₦300)";
-            }
+                if (!response.ok) throw await response.json();
 
-            async startTrial() {
-                const email = this.emailInput.value;
-                if (!email) return this.showMessage("Please enter your email", "error");
+                const { expiry_date } = await response.json();
+                localStorage.setItem('user_email', email);
+                this.showMessage("Trial activated! Redirecting...", "success");
 
-                this.confirmBtn.disabled = true;
-
-                try {
-                    const response = await fetch('/initiate-trial', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email })
-                    });
-
-                    if (!response.ok) throw await response.json();
-
-                    const { expiry_date } = await response.json();
-                    localStorage.setItem('user_email', email);
-                    this.showMessage("Trial activated! Redirecting...", "success");
-
-                    setTimeout(() => {
-                        window.location.href = `/ar?email=${encodeURIComponent(email)}`;
-                    }, 1500);
-
-                } catch (error) {
-                    this.showMessage(error.detail || "Trial activation failed", "error");
-                } finally {
-                    this.confirmBtn.disabled = false;
-                }
-            }
-
-            async payNow() {
-                const email = this.emailInput.value;
-                if (!email) return this.showMessage("Please enter your email", "error");
-
-                this.confirmBtn.disabled = true;
-                this.showMessage("Processing payment...", "success");
-
-                try {
-                    console.log("Initiating payment for:", email);
-                    const response = await fetch('/initiate-payment', {
-                        method: 'POST',
-                        headers: { 
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({ email })
-                    });
-
-                    const responseData = await response.json();
-                    console.log("Payment response:", responseData);
-
-                    if (!response.ok) {
-                        throw new Error(responseData.detail || "Payment initiation failed");
-                    }
-
-                    if (!responseData.payment_url) {
-                        throw new Error("No payment URL received from server");
-                    }
-
-                    // Store email before redirecting
-                    localStorage.setItem('user_email', email);
-
-                    // Force redirect
-                    window.location.replace(responseData.payment_url);
-
-                } catch (error) {
-                    console.error("Payment error:", error);
-                    this.showMessage(
-                        error.message.includes("Failed to fetch") 
-                            ? "Network error - please check your connection"
-                            : error.message,
-                        "error"
-                    );
-                } finally {
-                    this.confirmBtn.disabled = false;
-                }
-            }
-
-            handlePaymentResult() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const status = urlParams.get('payment');
-
-                if (status === 'success') {
-                    this.showMessage("Payment successful! Redirecting...", "success");
-                    setTimeout(() => {
-                        window.location.href = `/ar?email=${encodeURIComponent(localStorage.getItem('user_email'))}`;
-                    }, 1500);
-                } else if (status === 'failed') {
-                    this.showMessage("Payment failed. Please try again.", "error");
-                }
-            }
-
-            showMessage(text, type) {
-                this.statusEl.textContent = text;
-                this.statusEl.className = type;
-                this.statusEl.style.display = "block";
                 setTimeout(() => {
-                    this.statusEl.style.display = 'none';
-                }, 5000);
+                    window.location.href = `/index.html?email=${encodeURIComponent(email)}`;
+                }, 1500);
+
+            } catch (error) {
+                this.showMessage(error.detail || "Trial activation failed", "error");
+            } finally {
+                this.confirmBtn.disabled = false;
             }
         }
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            const payment = new PaymentSystem();
+        async payNow() {
+            const email = this.emailInput.value;
+            if (!email) return this.showMessage("Please enter your email", "error");
 
-            // Plan selection handlers
-            window.selectPlan = (plan) => {
-                document.querySelectorAll('.plan-option').forEach(el => {
-                    el.style.borderColor = '#ddd';
-                    el.style.backgroundColor = '';
+            this.confirmBtn.disabled = true;
+            this.showMessage("Processing payment...", "success");
+
+            try {
+                console.log("Initiating payment for:", email);
+                const response = await fetch('/initiate-payment', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ email })
                 });
-                event.currentTarget.style.borderColor = '#3d5afe';
-                event.currentTarget.style.backgroundColor = '#f8f9ff';
-                payment.selectPlan(plan);
-            };
-        });
-    </script>
+
+                const responseData = await response.json();
+                console.log("Payment response:", responseData);
+
+                if (!response.ok) {
+                    throw new Error(responseData.detail || "Payment initiation failed");
+                }
+
+                if (!responseData.payment_url) {
+                    throw new Error("No payment URL received from server");
+                }
+
+                // Store email before redirecting
+                localStorage.setItem('user_email', email);
+
+                // Redirect to Paystack/Flutterwave payment page
+                window.location.replace(responseData.payment_url);
+
+            } catch (error) {
+                console.error("Payment error:", error);
+                this.showMessage(
+                    error.message.includes("Failed to fetch") 
+                        ? "Network error - please check your connection"
+                        : error.message,
+                    "error"
+                );
+            } finally {
+                this.confirmBtn.disabled = false;
+            }
+        }
+
+        handlePaymentResult() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const status = urlParams.get('payment');
+
+            if (status === 'success') {
+                this.showMessage("Payment successful! Redirecting...", "success");
+                setTimeout(() => {
+                    window.location.href = `/index.html?email=${encodeURIComponent(localStorage.getItem('user_email'))}`;
+                }, 1500);
+            } else if (status === 'failed') {
+                this.showMessage("Payment failed. Please try again.", "error");
+            }
+        }
+
+        showMessage(text, type) {
+            this.statusEl.textContent = text;
+            this.statusEl.className = type;
+            this.statusEl.style.display = "block";
+            setTimeout(() => {
+                this.statusEl.style.display = 'none';
+            }, 5000);
+        }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+        await checkSubscription(); // ✅ check before showing payment page
+        const payment = new PaymentSystem();
+
+        // Plan selection handlers
+        window.selectPlan = (plan) => {
+            document.querySelectorAll('.plan-option').forEach(el => {
+                el.style.borderColor = '#ddd';
+                el.style.backgroundColor = '';
+            });
+            event.currentTarget.style.borderColor = '#3d5afe';
+            event.currentTarget.style.backgroundColor = '#f8f9ff';
+            payment.selectPlan(plan);
+        };
+    });
+</script>
 </body>
 </html>
