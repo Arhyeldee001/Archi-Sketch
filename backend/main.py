@@ -18,6 +18,7 @@ from backend.auth import register_user, login_user
 from backend import models
 from backend.routes import admin
 from backend.paystack import router as paystack_router
+from fastapi import Cookie
 
 # Init FastAPI app
 app = FastAPI()
@@ -296,17 +297,18 @@ def onboarding(request: Request):
     })
 
 @app.get("/api/check-access")
-async def check_access(db: Session = Depends(get_db)):
-    """Endpoint to verify if user has active subscription"""
+async def check_access(
+    request: Request,
+    db: Session = Depends(get_db),
+    user_email: str = Cookie(None)
+):
+    """Check if logged-in user has an active subscription"""
     try:
-        # Get email from localStorage via frontend
-        email = request.query_params.get("email")
-        if not email:
-            return {"has_access": False, "reason": "Email required"}
+        if not user_email:
+            return {"has_access": False, "reason": "No user email in cookies"}
         
-        # Check for active subscription
         active_sub = db.query(Subscription).filter(
-            Subscription.user_email == email,
+            Subscription.user_email == user_email,
             Subscription.expiry_date > datetime.now(),
             Subscription.is_active == True
         ).first()
@@ -321,7 +323,7 @@ async def check_access(db: Session = Depends(get_db)):
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
+        
 @app.middleware("http")
 async def check_subscription_middleware(request: Request, call_next):
     # Public routes
@@ -395,6 +397,7 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
