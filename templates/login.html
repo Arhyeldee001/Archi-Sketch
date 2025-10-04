@@ -7,49 +7,62 @@
     <!-- PWA manifest & theme -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#764ba2">
-
-    <!-- SIMPLE PWA META TAGS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Archi Trace">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
 
-    <!-- Viewport for mobile -->
+    <!-- Viewport -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover">
 
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
         body {
             margin: 0;
             padding: 0;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             height: 100vh;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #764ba2, #667eea);
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
         .container {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(20px);
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
             width: 100%;
             max-width: 400px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(25px);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             color: #fff;
-            position: relative;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         h2 {
-            text-align: center;
             margin-bottom: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 1px;
         }
 
         form {
             display: none;
             flex-direction: column;
             gap: 1rem;
+            animation: fadeForm 0.4s ease;
+        }
+
+        @keyframes fadeForm {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         form.active {
@@ -57,47 +70,73 @@
         }
 
         input {
-            padding: 0.75rem;
+            padding: 0.8rem;
             border: none;
-            border-radius: 5px;
+            border-radius: 10px;
             font-size: 1rem;
+            outline: none;
+            background: rgba(255, 255, 255, 0.85);
+            color: #333;
+            transition: 0.2s ease;
+        }
+
+        input:focus {
+            background: #fff;
+            box-shadow: 0 0 5px rgba(118, 75, 162, 0.5);
         }
 
         button {
-            padding: 0.75rem;
+            padding: 0.9rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
             background: #fff;
             color: #764ba2;
-            font-weight: bold;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
             transition: 0.3s ease;
         }
 
         button:hover {
-            background: #f0f0f0;
+            background: #f2f2f2;
+            transform: translateY(-2px);
         }
 
         .switch {
-            text-align: center;
             margin-top: 1rem;
+            font-size: 0.9rem;
         }
 
         .switch a {
             color: #fff;
             text-decoration: underline;
             cursor: pointer;
+            font-weight: 500;
         }
 
         #message {
             margin-top: 1rem;
-            text-align: center;
-            font-weight: bold;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                width: 90%;
+                padding: 1.5rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="logo">Archi Trace</div>
         <h2 id="formTitle">Login</h2>
 
         <!-- Login Form -->
@@ -153,7 +192,7 @@
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(data),
-                    credentials: "include"  // CRITICAL FOR COOKIES
+                    credentials: "include"
                 });
 
                 const result = await res.json();
@@ -163,17 +202,14 @@
                     return;
                 }
 
-                // Save user info
                 localStorage.setItem('user_email', data.email);
                 localStorage.setItem('user_id', result.user_id);
 
                 message.textContent = "✅ " + result.message;
-                console.log("Login response:", result);
-
                 if (result.redirect_to) {
                     window.location.href = result.redirect_to;
                 } else {
-                    window.location.href = "/dashboard.html";  // Fallback
+                    window.location.href = "/dashboard.html";
                 }
             } catch (error) {
                 console.error("Login error:", error);
@@ -206,8 +242,6 @@
                 }
 
                 message.textContent = "✅ " + result.message;
-                console.log("Registration response:", result);
-
                 if (result.redirect_to) {
                     window.location.href = result.redirect_to;
                 } else {
@@ -230,3 +264,5 @@
     </script>
 </body>
 </html>
+
+
