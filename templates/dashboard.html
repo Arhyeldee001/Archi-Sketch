@@ -278,89 +278,60 @@
     </div>
 
     <script>
-        // ✅ PWA install prompt
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            const installBtn = document.getElementById('install-btn');
-            if (installBtn) {
-                installBtn.style.display = 'block';
-                installBtn.onclick = () => {
-                    deferredPrompt.prompt();
-                    deferredPrompt.userChoice.then(() => {
-                        installBtn.style.display = 'none';
-                    });
-                };
+    async function checkSubscriptionStatus() {
+        try {
+            const response = await fetch('/api/check-subscription', {
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
             }
-        });
+            
+            const data = await response.json();
+            return data.active;  // ✅ matches backend response
+        } catch (error) {
+            console.error('Error checking subscription:', error);
+            return false;
+        }
+    }
 
-        window.addEventListener('appinstalled', () => {
-            const installBtn = document.getElementById('install-btn');
-            if (installBtn) installBtn.style.display = 'none';
-        });
-
-        // ✅ Service Worker registration
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .then(reg => console.log('Service Worker registered:', reg))
-                .catch(err => console.log('SW registration failed:', err));
+    document.addEventListener('DOMContentLoaded', function() {
+        // ✅ Display user email from localStorage if available
+        const email = localStorage.getItem('user_email');
+        if (email) {
+            document.getElementById('user-email').innerText = email;
         }
 
-        // ✅ Logout function
-        function logout() {
-            fetch('/api/logout', {
-                method: 'POST',
-                credentials: 'include'
-            })
-            .then(() => {
-                window.location.href = '/login';
-            })
-            .catch(err => {
-                console.error('Logout error:', err);
-                window.location.href = '/login';
+        // ✅ AR Tracing button click handling
+        const arButton = document.getElementById('ar-tracing-btn');
+        if (arButton) {
+            arButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Check subscription status first
+                checkSubscriptionStatus().then(hasAccess => {
+                    if (hasAccess) {
+                        window.location.href = '/ar';   // active sub → go to AR page
+                    } else {
+                        window.location.href = '/payment';  // no sub → go to payment
+                    }
+                }).catch(error => {
+                    console.error('Error checking subscription:', error);
+                    window.location.href = '/payment';  // fallback
+                });
             });
         }
 
-        // Handle AR button click with subscription check
-        document.addEventListener('DOMContentLoaded', function() {
-            const arButton = document.getElementById('ar-tracing-btn');
-            if (arButton) {
-                arButton.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    // Check subscription status first
-                    checkSubscriptionStatus().then(hasAccess => {
-                        if (hasAccess) {
-                            window.location.href = '/ar';
-                        } else {
-                            window.location.href = '/payment';
-                        }
-                    }).catch(error => {
-                        console.error('Error checking subscription:', error);
-                        window.location.href = '/payment';
-                    });
-                });
-            }
-        });
-
-        async function checkSubscriptionStatus() {
-            try {
-                const response = await fetch('/api/check-access', {
-                    credentials: 'include'
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                
-                const data = await response.json();
-                return data.has_access;
-            } catch (error) {
-                console.error('Error checking subscription:', error);
-                return false;
-            }
+        // ✅ Logout button handling
+        const logoutButton = document.getElementById('logout-btn');
+        if (logoutButton) {
+            logoutButton.addEventListener('click', function() {
+                localStorage.removeItem('user_email');
+                window.location.href = '/login';
+            });
         }
-    </script>
+    });
+</script>
 </body>
 </html>
