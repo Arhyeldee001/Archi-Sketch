@@ -253,10 +253,17 @@ async def complete_onboarding(
 # ===== Frontend Routes ===== #
 @app.get("/")
 def root(request: Request):
-    if request.cookies.get("session_token"):
-        return RedirectResponse(url="/dashboard.html")
-    return RedirectResponse(url="/onboarding")
+    """Root route — used by PWA start_url ("/")"""
+    session_token = request.cookies.get("session_token")
+    user_email = request.cookies.get("user_email")
 
+    if session_token and user_email:
+        # ✅ Logged-in user → go to dashboard
+        return RedirectResponse(url="/dashboard.html")
+    else:
+        # 🧭 Not logged in → go to onboarding/login
+        return RedirectResponse(url="/login")
+        
 @app.get("/dashboard.html", response_class=HTMLResponse)
 def dashboard(request: Request):
     """Main dashboard route"""
@@ -439,3 +446,4 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
