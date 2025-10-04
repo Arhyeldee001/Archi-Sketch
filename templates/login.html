@@ -1,268 +1,313 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Login / Register</title>
+  <meta charset="UTF-8">
+  <title>Login / Register</title>
 
-    <!-- PWA manifest & theme -->
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#764ba2">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Archi Trace">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
+  <!-- PWA manifest & theme -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#764ba2">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Archi Trace">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
 
-    <!-- Viewport -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover">
+  <!-- Viewport -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover">
 
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
 
-        body {
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #764ba2, #667eea);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #764ba2, #667eea);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-        .container {
-            width: 100%;
-            max-width: 400px;
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(25px);
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            color: #fff;
-            text-align: center;
-            animation: fadeIn 0.5s ease;
-        }
+    .container {
+      width: 100%;
+      max-width: 420px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(25px);
+      padding: 2rem;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      color: #fff;
+      text-align: center;
+      animation: fadeIn 0.5s ease;
+    }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
-        h2 {
-            margin-bottom: 1.5rem;
-            font-weight: 600;
-            letter-spacing: 1px;
-        }
+    h2 {
+      margin-bottom: 1.2rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
 
-        form {
-            display: none;
-            flex-direction: column;
-            gap: 1rem;
-            animation: fadeForm 0.4s ease;
-        }
+    form {
+      display: none;
+      flex-direction: column;
+      gap: 1rem;
+      animation: fadeForm 0.4s ease;
+    }
 
-        @keyframes fadeForm {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+    @keyframes fadeForm {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
-        form.active {
-            display: flex;
-        }
+    form.active {
+      display: flex;
+    }
 
-        input {
-            padding: 0.8rem;
-            border: none;
-            border-radius: 10px;
-            font-size: 1rem;
-            outline: none;
-            background: rgba(255, 255, 255, 0.85);
-            color: #333;
-            transition: 0.2s ease;
-        }
+    .input-group {
+      position: relative;
+    }
 
-        input:focus {
-            background: #fff;
-            box-shadow: 0 0 5px rgba(118, 75, 162, 0.5);
-        }
+    input {
+      padding: 0.8rem;
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      outline: none;
+      background: rgba(255, 255, 255, 0.85);
+      color: #333;
+      transition: 0.2s ease;
+    }
 
-        button {
-            padding: 0.9rem;
-            border: none;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            background: #fff;
-            color: #764ba2;
-            transition: 0.3s ease;
-        }
+    input:focus {
+      background: #fff;
+      box-shadow: 0 0 5px rgba(118, 75, 162, 0.5);
+    }
 
-        button:hover {
-            background: #f2f2f2;
-            transform: translateY(-2px);
-        }
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #764ba2;
+      font-size: 1.1rem;
+      user-select: none;
+    }
 
-        .switch {
-            margin-top: 1rem;
-            font-size: 0.9rem;
-        }
+    button {
+      padding: 0.9rem;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: #fff;
+      color: #764ba2;
+      transition: 0.3s ease;
+    }
 
-        .switch a {
-            color: #fff;
-            text-decoration: underline;
-            cursor: pointer;
-            font-weight: 500;
-        }
+    button:hover {
+      background: #f2f2f2;
+      transform: translateY(-2px);
+    }
 
-        #message {
-            margin-top: 1rem;
-            font-weight: 600;
-            font-size: 0.95rem;
-        }
+    .switch {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
 
-        .logo {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
+    .switch a {
+      color: #fff;
+      text-decoration: underline;
+      cursor: pointer;
+      font-weight: 500;
+    }
 
-        @media (max-width: 480px) {
-            .container {
-                width: 90%;
-                padding: 1.5rem;
-            }
-        }
-    </style>
+    #message {
+      margin-top: 1rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        width: 90%;
+        padding: 1.5rem;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="logo">Archi Trace</div>
-        <h2 id="formTitle">Login</h2>
+  <div class="container">
+    <div class="logo">Archi Trace</div>
+    <h2 id="formTitle">Login</h2>
 
-        <!-- Login Form -->
-        <form id="loginForm" class="active">
-            <input type="email" id="loginEmail" placeholder="Email" required />
-            <input type="password" id="loginPassword" placeholder="Password" required />
-            <button type="submit">Login</button>
-        </form>
+    <!-- LOGIN FORM -->
+    <form id="loginForm" class="active">
+      <input type="email" id="loginEmail" placeholder="Email" required />
+      <div class="input-group">
+        <input type="password" id="loginPassword" placeholder="Password" required />
+        <span class="toggle-password" onclick="togglePassword('loginPassword', this)">👁️</span>
+      </div>
+      <button type="submit">Login</button>
+    </form>
 
-        <!-- Register Form -->
-        <form id="registerForm">
-            <input type="text" id="regFullname" placeholder="Full Name" required />
-            <input type="text" id="regPhone" placeholder="Phone" required />
-            <input type="email" id="regEmail" placeholder="Email" required />
-            <input type="password" id="regPassword" placeholder="Password" required />
-            <button type="submit">Register</button>
-        </form>
+    <!-- REGISTER FORM -->
+    <form id="registerForm">
+      <input type="text" id="regFullname" placeholder="Full Name" required />
+      <input type="text" id="regUsername" placeholder="Username" required />
+      <input type="email" id="regEmail" placeholder="Email" required />
+      <input type="text" id="regPhone" placeholder="Phone Number" required />
 
-        <div class="switch">
-            <span id="switchText">Don't have an account? <a onclick="toggleForm()">Register here</a></span>
-        </div>
+      <div class="input-group">
+        <input type="password" id="regPassword" placeholder="Password" required />
+        <span class="toggle-password" onclick="togglePassword('regPassword', this)">👁️</span>
+      </div>
 
-        <p id="message"></p>
+      <div class="input-group">
+        <input type="password" id="regConfirmPassword" placeholder="Confirm Password" required />
+        <span class="toggle-password" onclick="togglePassword('regConfirmPassword', this)">👁️</span>
+      </div>
+
+      <button type="submit">Register</button>
+    </form>
+
+    <div class="switch">
+      <span id="switchText">Don't have an account? <a onclick="toggleForm()">Register here</a></span>
     </div>
 
-    <script>
-        const loginForm = document.getElementById("loginForm");
-        const registerForm = document.getElementById("registerForm");
-        const formTitle = document.getElementById("formTitle");
-        const switchText = document.getElementById("switchText");
-        const message = document.getElementById("message");
+    <p id="message"></p>
+  </div>
 
-        function toggleForm() {
-            const isLoginActive = loginForm.classList.contains("active");
-            loginForm.classList.toggle("active");
-            registerForm.classList.toggle("active");
-            formTitle.textContent = isLoginActive ? "Register" : "Login";
-            switchText.innerHTML = isLoginActive
-                ? 'Already have an account? <a onclick="toggleForm()">Login here</a>'
-                : 'Don\'t have an account? <a onclick="toggleForm()">Register here</a>';
-            message.textContent = "";
-        }
+  <script>
+    const loginForm = document.getElementById("loginForm");
+    const registerForm = document.getElementById("registerForm");
+    const formTitle = document.getElementById("formTitle");
+    const switchText = document.getElementById("switchText");
+    const message = document.getElementById("message");
 
-        loginForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const data = {
-                email: document.getElementById("loginEmail").value,
-                password: document.getElementById("loginPassword").value
-            };
+    function toggleForm() {
+      const isLoginActive = loginForm.classList.contains("active");
+      loginForm.classList.toggle("active");
+      registerForm.classList.toggle("active");
+      formTitle.textContent = isLoginActive ? "Register" : "Login";
+      switchText.innerHTML = isLoginActive
+        ? 'Already have an account? <a onclick="toggleForm()">Login here</a>'
+        : 'Don\'t have an account? <a onclick="toggleForm()">Register here</a>';
+      message.textContent = "";
+    }
 
-            try {
-                const res = await fetch("/api/login", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data),
-                    credentials: "include"
-                });
+    function togglePassword(id, el) {
+      const input = document.getElementById(id);
+      if (input.type === "password") {
+        input.type = "text";
+        el.textContent = "🙈";
+      } else {
+        input.type = "password";
+        el.textContent = "👁️";
+      }
+    }
 
-                const result = await res.json();
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = {
+        email: document.getElementById("loginEmail").value,
+        password: document.getElementById("loginPassword").value
+      };
 
-                if (!res.ok) {
-                    message.textContent = "❌ " + (result.detail || "Login failed");
-                    return;
-                }
-
-                localStorage.setItem('user_email', data.email);
-                localStorage.setItem('user_id', result.user_id);
-
-                message.textContent = "✅ " + result.message;
-                if (result.redirect_to) {
-                    window.location.href = result.redirect_to;
-                } else {
-                    window.location.href = "/dashboard.html";
-                }
-            } catch (error) {
-                console.error("Login error:", error);
-                message.textContent = "❌ Network error";
-            }
+      try {
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+          credentials: "include"
         });
 
-        registerForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const user = {
-                fullname: document.getElementById("regFullname").value,
-                phone: document.getElementById("regPhone").value,
-                email: document.getElementById("regEmail").value,
-                password: document.getElementById("regPassword").value
-            };
+        const result = await res.json();
+        if (!res.ok) {
+          message.textContent = "❌ " + (result.detail || "Login failed");
+          return;
+        }
 
-            try {
-                const res = await fetch("/api/register", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(user),
-                    credentials: "include"
-                });
+        localStorage.setItem('user_email', data.email);
+        localStorage.setItem('user_id', result.user_id);
 
-                const result = await res.json();
+        message.textContent = "✅ " + result.message;
+        if (result.redirect_to) {
+          window.location.href = result.redirect_to;
+        } else {
+          window.location.href = "/dashboard.html";
+        }
+      } catch (error) {
+        console.error("Login error:", error);
+        message.textContent = "❌ Network error";
+      }
+    });
 
-                if (!res.ok) {
-                    message.textContent = "❌ " + (result.detail || "Registration failed");
-                    return;
-                }
+    registerForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const pass = document.getElementById("regPassword").value;
+      const confirm = document.getElementById("regConfirmPassword").value;
+      if (pass !== confirm) {
+        message.textContent = "❌ Passwords do not match";
+        return;
+      }
 
-                message.textContent = "✅ " + result.message;
-                if (result.redirect_to) {
-                    window.location.href = result.redirect_to;
-                } else {
-                    window.location.href = "/onboarding";
-                }
-            } catch (error) {
-                console.error("Registration error:", error);
-                message.textContent = "❌ Network error";
-            }
+      const user = {
+        fullname: document.getElementById("regFullname").value,
+        username: document.getElementById("regUsername").value,
+        email: document.getElementById("regEmail").value,
+        phone: document.getElementById("regPhone").value,
+        password: pass
+      };
+
+      try {
+        const res = await fetch("/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(user),
+          credentials: "include"
         });
 
-        // Register Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/static/sw.js')
-                    .then(reg => console.log('SW registered: ', reg))
-                    .catch(err => console.log('SW registration failed: ', err));
-            });
+        const result = await res.json();
+        if (!res.ok) {
+          message.textContent = "❌ " + (result.detail || "Registration failed");
+          return;
         }
-    </script>
+
+        message.textContent = "✅ " + result.message;
+        if (result.redirect_to) {
+          window.location.href = result.redirect_to;
+        } else {
+          window.location.href = "/onboarding";
+        }
+      } catch (error) {
+        console.error("Registration error:", error);
+        message.textContent = "❌ Network error";
+      }
+    });
+
+    // Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/static/sw.js')
+          .then(reg => console.log('SW registered: ', reg))
+          .catch(err => console.log('SW registration failed: ', err));
+      });
+    }
+  </script>
 </body>
 </html>
-
-
