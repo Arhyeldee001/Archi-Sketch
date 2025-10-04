@@ -365,10 +365,52 @@ async def check_subscription_middleware(request: Request, call_next):
 async def payment_page(request: Request):
     return templates.TemplateResponse("payment.html", {"request": request})
 
-@app.get("/payment-success")
-async def payment_success():
-    return RedirectResponse(url="/ar?payment=success")
 
+@app.post("/api/payment-success")
+async def payment_success(
+    request: Request, 
+    db: Session = Depends(get_db),
+    user_email: str = Cookie(None)
+):
+    try:
+        data = await request.json()
+
+        if not user_email:
+            raise HTTPException(status_code=400, detail="User email not found in cookies")
+
+        # Get or create subscription entry
+        subscription = db.query(Subscription).filter(
+            Subscription.user_email == user_email
+        ).first()
+
+        if subscription:
+            # Renew or update existing subscription
+            subscription.is_active = True
+            subscription.start_date = datetime.now()
+            subscription.expiry_date = datetime.now() + timedelta(days=30)
+        else:
+            # Create new subscription entry
+            subscription = Subscription(
+                user_email=user_email,
+                is_active=True,
+                start_date=datetime.now(),
+                expiry_date=datetime.now() + timedelta(days=30)
+            )
+            db.add(subscription)
+
+        db.commit()
+        db.refresh(subscription)
+
+        return {
+            "status": "success",
+            "message": "Subscription activated",
+            "expiry": subscription.expiry_date.isoformat()
+        }
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error processing payment: {e}")
+        
 
 # ===== AR Experience ===== #
 @app.get("/ar", response_class=HTMLResponse)
@@ -397,19 +439,3 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
