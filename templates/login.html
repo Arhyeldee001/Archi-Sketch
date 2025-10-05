@@ -1,77 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Archi Trace - Login</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      font-family: "Poppins", sans-serif;
-    }
+  <meta charset="UTF-8">
+  <title>Archi Trace - Login / Register</title>
 
+  <!-- PWA manifest & theme -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#764ba2">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Archi Trace">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover">
+
+  <style>
     body {
       margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #764ba2, #667eea);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #764ba2, #667eea);
+      color: #fff;
     }
 
     .container {
-      background: white;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(20px);
       padding: 2rem;
+      border-radius: 15px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
       width: 90%;
       max-width: 400px;
-      border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-      transition: all 0.3s ease;
-    }
-
-    .form {
-      display: none;
-    }
-
-    .form.active {
-      display: block;
+      color: #fff;
+      text-align: center;
     }
 
     h2 {
       text-align: center;
-      color: #764ba2;
       margin-bottom: 1.5rem;
     }
 
-    input {
-      width: 100%;
-      padding: 0.8rem;
-      margin: 0.6rem 0;
-      border: 1.5px solid #ccc;
-      border-radius: 8px;
-      outline: none;
-      transition: border-color 0.2s;
+    form {
+      display: none;
+      flex-direction: column;
+      gap: 1rem;
     }
 
-    input:focus {
-      border-color: #764ba2;
+    form.active {
+      display: flex;
+    }
+
+    input {
+      padding: 0.75rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      width: 100%;
+      max-width: 320px;
+      margin: 0 auto;
+      display: block;
     }
 
     button {
-      width: 100%;
-      padding: 0.8rem;
-      margin-top: 1rem;
-      background: #764ba2;
-      color: white;
-      font-weight: 600;
+      padding: 0.75rem;
+      background: #fff;
+      color: #764ba2;
+      font-weight: bold;
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      transition: background 0.3s;
+      transition: 0.3s ease;
+      width: 100%;
+      max-width: 320px;
+      margin: 0 auto;
     }
 
     button:hover {
-      background: #5a3780;
+      background: #f0f0f0;
     }
 
     .switch {
@@ -79,135 +87,179 @@
       margin-top: 1rem;
     }
 
-    .switch span {
-      color: #764ba2;
-      font-weight: 600;
+    .switch a {
+      color: #fff;
+      text-decoration: underline;
       cursor: pointer;
     }
 
-    #otp-section {
-      display: none;
-      text-align: center;
+    small {
+      font-size: 0.8rem;
     }
 
-    #otp-section input {
+    #message {
+      margin-top: 1rem;
       text-align: center;
-      letter-spacing: 4px;
-      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    #otpContainer {
+      display: none;
+      margin-top: 1.5rem;
+    }
+
+    #otpContainer input {
+      text-align: center;
+      letter-spacing: 3px;
     }
   </style>
 </head>
 <body>
   <div class="container">
+    <h2 id="formTitle">Login</h2>
 
-    <!-- LOGIN FORM -->
-    <div class="form active" id="login-form">
-      <h2>Login</h2>
-      <input type="tel" id="login-phone" placeholder="Phone Number" required />
-      <input type="password" id="login-password" placeholder="Password" required />
-      <button onclick="login()">Login</button>
-      <div class="switch">
-        Don’t have an account? <span onclick="showRegister()">Register</span>
-      </div>
+    <!-- Login Form -->
+    <form id="loginForm" class="active">
+      <input id="loginPhone" type="text" placeholder="Phone number" required />
+      <input id="loginPassword" type="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+
+    <!-- Register Form -->
+    <form id="registerForm">
+      <input type="text" id="registerName" placeholder="Full Name" required />
+      <input type="text" id="registerPhone" placeholder="Phone Number" required />
+      <input type="email" id="registerEmail" placeholder="Email Address" required />
+      <input type="password" id="registerPassword" placeholder="Password" required />
+      <small id="passwordMsg"></small>
+      <button type="submit">Register</button>
+    </form>
+
+    <!-- OTP Verification -->
+    <div id="otpContainer">
+      <h4>Enter OTP</h4>
+      <input id="otpInput" type="text" placeholder="6-digit OTP" maxlength="6" />
+      <button id="otpSubmit">Verify OTP</button>
     </div>
 
-    <!-- REGISTER FORM -->
-    <div class="form" id="register-form">
-      <h2>Create Account</h2>
-      <input type="text" id="reg-fullname" placeholder="Full Name" required />
-      <input type="email" id="reg-email" placeholder="Email" required />
-      <input type="tel" id="reg-phone" placeholder="Phone Number" required />
-      <input type="password" id="reg-password" placeholder="Password" required />
-      <input type="password" id="reg-confirm" placeholder="Confirm Password" required />
-      <button onclick="register()">Register</button>
-      <div class="switch">
-        Already have an account? <span onclick="showLogin()">Login</span>
-      </div>
+    <div class="switch">
+      <span id="switchText">Don't have an account? <a onclick="toggleForm()">Register here</a></span>
     </div>
 
-    <!-- OTP VERIFICATION -->
-    <div id="otp-section">
-      <h2>Verify OTP</h2>
-      <p>Enter the 6-digit code sent to your phone</p>
-      <input type="text" id="otp-input" maxlength="6" placeholder="------" />
-      <button onclick="verifyOtp()">Verify</button>
-    </div>
-
+    <p id="message"></p>
   </div>
 
   <script>
-    function showRegister() {
-      document.getElementById("login-form").classList.remove("active");
-      document.getElementById("register-form").classList.add("active");
-      document.getElementById("otp-section").style.display = "none";
+    const loginForm = document.getElementById("loginForm");
+    const registerForm = document.getElementById("registerForm");
+    const formTitle = document.getElementById("formTitle");
+    const switchText = document.getElementById("switchText");
+    const message = document.getElementById("message");
+    const otpContainer = document.getElementById("otpContainer");
+    const otpInput = document.getElementById("otpInput");
+    const otpSubmit = document.getElementById("otpSubmit");
+    const passwordInput = document.getElementById("registerPassword");
+    const passwordMsg = document.getElementById("passwordMsg");
+
+    function toggleForm() {
+      const isLoginActive = loginForm.classList.contains("active");
+      loginForm.classList.toggle("active");
+      registerForm.classList.toggle("active");
+      otpContainer.style.display = "none";
+      formTitle.textContent = isLoginActive ? "Register" : "Login";
+      switchText.innerHTML = isLoginActive
+        ? 'Already have an account? <a onclick="toggleForm()">Login here</a>'
+        : 'Don\'t have an account? <a onclick="toggleForm()">Register here</a>';
+      message.textContent = "";
     }
 
-    function showLogin() {
-      document.getElementById("register-form").classList.remove("active");
-      document.getElementById("login-form").classList.add("active");
-      document.getElementById("otp-section").style.display = "none";
-    }
-
-    async function register() {
-      const fullname = document.getElementById("reg-fullname").value.trim();
-      const email = document.getElementById("reg-email").value.trim();
-      const phone = document.getElementById("reg-phone").value.trim();
-      const password = document.getElementById("reg-password").value;
-      const confirm = document.getElementById("reg-confirm").value;
-
-      if (password !== confirm) {
-        alert("Passwords do not match!");
-        return;
+    // Password strength validation
+    passwordInput.addEventListener("input", () => {
+      const val = passwordInput.value;
+      const strong = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[\\W_]).{8,}$/;
+      if (strong.test(val)) {
+        passwordMsg.textContent = "✅ Strong password";
+        passwordMsg.style.color = "lime";
+      } else {
+        passwordMsg.textContent = "⚠️ Must be 8+ chars, include uppercase, lowercase, number & symbol";
+        passwordMsg.style.color = "yellow";
       }
+    });
 
-      // Password validation
-      const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*]).{8,}$/;
-      if (!regex.test(password)) {
-        alert("Password must have at least 8 characters, including uppercase, number, and symbol.");
-        return;
-      }
+    // Register (Step 1: Send OTP)
+    registerForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fullname = document.getElementById("registerName").value.trim();
+      const phone = document.getElementById("registerPhone").value.trim();
+      const email = document.getElementById("registerEmail").value.trim();
+      const password = document.getElementById("registerPassword").value.trim();
 
-      const res = await fetch("/register", {
+      const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullname, email, phone, password }),
+        body: JSON.stringify({ fullname, phone, email, password }),
       });
 
       const data = await res.json();
       if (data.status === "otp_sent") {
-        document.getElementById("register-form").classList.remove("active");
-        document.getElementById("otp-section").style.display = "block";
+        otpContainer.style.display = "block";
+        alert("OTP sent! (check console for now)");
+        console.log("OTP:", data.otp); // Temporary display
       } else {
-        alert(data.message || "Error during registration");
+        alert(data.detail || "Error sending OTP");
       }
-    }
+    });
 
-    async function verifyOtp() {
-      const otp = document.getElementById("otp-input").value.trim();
-      const res = await fetch("/verify_otp", {
+    // Register (Step 2: Verify OTP)
+    otpSubmit.addEventListener("click", async () => {
+      const otp = otpInput.value.trim();
+      if (!otp) return alert("Enter OTP");
+
+      const res = await fetch("/api/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ otp }),
       });
-      const data = await res.json();
-      alert(data.message);
-      if (data.status === "success") showLogin();
-    }
 
-    async function login() {
-      const phone = document.getElementById("login-phone").value.trim();
-      const password = document.getElementById("login-password").value;
-      const res = await fetch("/login", {
+      const data = await res.json();
+      if (data.status === "success") {
+        alert("✅ Account created! You can now log in.");
+        otpContainer.style.display = "none";
+        registerForm.reset();
+        toggleForm();
+      } else {
+        alert(data.detail || "Invalid OTP");
+      }
+    });
+
+    // Login
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const phone = document.getElementById("loginPhone").value.trim();
+      const password = document.getElementById("loginPassword").value.trim();
+
+      const res = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, password }),
       });
+
       const data = await res.json();
-      if (data.status === "success") {
-        window.location.href = "/dashboard.html";
+      if (res.ok) {
+        alert("✅ Login successful!");
+        window.location.href = data.redirect_to || "/dashboard.html";
       } else {
-        alert(data.message || "Invalid credentials");
+        alert(data.detail || "Login failed");
       }
+    });
+
+    // Register Service Worker
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/static/sw.js")
+          .then(reg => console.log("SW registered:", reg))
+          .catch(err => console.log("SW registration failed:", err));
+      });
     }
   </script>
 </body>
