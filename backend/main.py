@@ -221,9 +221,13 @@ async def send_otp(
     if db.query(User).filter(User.phone == user_data.phone).first():
         raise HTTPException(status_code=400, detail="Phone already registered")
 
-    # Validate password
-    if len(user_data.password) < 8:
-        raise HTTPException(status_code=400, detail="Password too short")
+    # Validate password strength
+    password_pattern = re.compile(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$')
+     if not password_pattern.match(user_data.password):
+      raise HTTPException(
+         status_code=400,
+         detail="Password must be at least 8 characters long, include uppercase, lowercase, a number, and a symbol."
+       )
 
     otp = ''.join(random.choices(string.digits, k=6))
     otp_store[user_data.email] = {
@@ -553,6 +557,7 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
