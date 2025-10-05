@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 import base64
 import requests
 import json
@@ -22,7 +23,20 @@ from fastapi import Cookie
 import random, string, re
 from passlib.context import CryptContext
 from pydantic import EmailStr
+from fastapi import BackgroundTasks
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
+# ===== EMAIL CONFIG ===== #
+
+
+load_dotenv()
+
+EMAIL_SENDER = os.getenv("EMAIL_SENDER")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
+SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 # Init FastAPI app
 app = FastAPI()
 
@@ -50,6 +64,9 @@ app.add_middleware(
 
 # Database init
 init_db()
+
+otp_store = {}
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # ======== ADD THESE LINES ======== #
 def initialize_data():
@@ -108,6 +125,34 @@ class SubscriptionData(BaseModel):
 # Subscription storage file path
 SUBSCRIPTIONS_FILE = "subscriptions.txt"
 
+def send_email_otp(recipient_email: str, otp_code: str):
+    """Send OTP via email using SMTP"""
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = EMAIL_SENDER
+        msg["To"] = recipient_email
+        msg["Subject"] = "Your Archi Trace OTP Code"
+
+        body = f"""
+        <html>
+            <body>
+                <h2 style="color:#764ba2;">Archi Trace Verification</h2>
+                <p>Use this One-Time Password (OTP) to complete your registration:</p>
+                <h1 style="color:#764ba2;">{otp_code}</h1>
+                <p>This code will expire in 5 minutes.</p>
+            </body>
+        </html>
+        """
+        msg.attach(MIMEText(body, "html"))
+
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+            server.send_message(msg)
+        print(f"📧 OTP email sent to {recipient_email}")
+    except Exception as e:
+        print(f"❌ Failed to send email OTP: {e}")
+
 # ===== Middleware ===== #
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
@@ -164,22 +209,24 @@ async def debug_static_files():
 
 # ===== Auth Endpoints ===== #
 # ===== Auth Endpoints ===== #
-# ===== Register (Step 1: Send OTP) =====
-@app.post("/api/register")
-async def register(user_data: UserRegistration, db: Session = Depends(get_db)):
+@app.post("/api/send-otp")
+async def send_otp(
+    user_data: UserRegistration,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
     # Check if email or phone already registered
     if db.query(User).filter(User.email == user_data.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
     if db.query(User).filter(User.phone == user_data.phone).first():
         raise HTTPException(status_code=400, detail="Phone already registered")
 
-    # Validate strong password
-    if len(user_data.password) < 8 or not re.search(r"[A-Z]", user_data.password) or not re.search(r"[a-z]", user_data.password) or not re.search(r"[0-9]", user_data.password) or not re.search(r"[!@#$%^&*(),.?\":{}|<>]", user_data.password):
-        raise HTTPException(status_code=400, detail="Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.")
+    # Validate password
+    if len(user_data.password) < 8:
+        raise HTTPException(status_code=400, detail="Password too short")
 
-    # Generate OTP
     otp = ''.join(random.choices(string.digits, k=6))
-    otp_store[user_data.phone] = {
+    otp_store[user_data.email] = {
         "otp": otp,
         "expires_at": datetime.now() + timedelta(minutes=5),
         "pending_user": {
@@ -190,33 +237,44 @@ async def register(user_data: UserRegistration, db: Session = Depends(get_db)):
         }
     }
 
-    # Simulate sending OTP (for now, just print)
-    print(f"🔐 OTP for {user_data.phone}: {otp}")
+    # Send OTP in background (non-blocking)
+    background_tasks.add_task(send_email_otp, user_data.email, otp)
 
-    return {"status": "otp_sent", "message": "OTP sent successfully"}
-
-# ===== Verify OTP (Step 2: Create account) =====
+    print(f"📨 OTP for {user_data.email}: {otp}")
+    return {"status": "success", "message": "OTP sent successfully"}
+    
 @app.post("/api/verify-otp")
 async def verify_otp(request: Request, db: Session = Depends(get_db)):
     body = await request.json()
+    email = body.get("email")
     otp = body.get("otp")
 
-    for phone, record in otp_store.items():
-        if record["otp"] == otp and datetime.now() < record["expires_at"]:
-            user_data = record["pending_user"]
-            new_user = User(
-                fullname=user_data["fullname"],
-                email=user_data["email"],
-                phone=user_data["phone"],
-                hashed_password=user_data["hashed_password"],
-                is_first_login=True
-            )
-            db.add(new_user)
-            db.commit()
-            del otp_store[phone]
-            return {"status": "success", "message": "Account created successfully"}
+    if email not in otp_store:
+        raise HTTPException(status_code=400, detail="No pending OTP for this email")
 
-    raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+    record = otp_store[email]
+    if record["otp"] != otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+
+    if datetime.now() > record["expires_at"]:
+        del otp_store[email]
+        raise HTTPException(status_code=400, detail="OTP expired")
+
+    user_data = record["pending_user"]
+    new_user = User(
+        fullname=user_data["fullname"],
+        email=user_data["email"],
+        phone=user_data["phone"],
+        hashed_password=user_data["hashed_password"],
+        is_first_login=True
+    )
+
+    db.add(new_user)
+    db.commit()
+    del otp_store[email]
+
+    return {"status": "success", "message": "Account created successfully"}
+    
 @app.post("/api/resend-otp")
 async def resend_otp(request: Request):
     body = await request.json()
@@ -495,5 +553,6 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
