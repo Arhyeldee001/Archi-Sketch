@@ -19,6 +19,9 @@ from backend import models
 from backend.routes import admin
 from backend.paystack import router as paystack_router
 from fastapi import Cookie
+import random, string, re
+from passlib.context import CryptContext
+from pydantic import EmailStr
 
 # Init FastAPI app
 app = FastAPI()
@@ -95,7 +98,7 @@ class AuthData(BaseModel):
 class UserRegistration(BaseModel):
     fullname: str
     phone: str
-    email: str
+    email: EmailStr
     password: str
 
 class SubscriptionData(BaseModel):
@@ -161,12 +164,86 @@ async def debug_static_files():
 
 # ===== Auth Endpoints ===== #
 # ===== Auth Endpoints ===== #
+# ===== Register (Step 1: Send OTP) =====
+@app.post("/api/register")
+async def register(user_data: UserRegistration, db: Session = Depends(get_db)):
+    # Check if email or phone already registered
+    if db.query(User).filter(User.email == user_data.email).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+    if db.query(User).filter(User.phone == user_data.phone).first():
+        raise HTTPException(status_code=400, detail="Phone already registered")
+
+    # Validate strong password
+    if len(user_data.password) < 8 or not re.search(r"[A-Z]", user_data.password) or not re.search(r"[a-z]", user_data.password) or not re.search(r"[0-9]", user_data.password) or not re.search(r"[!@#$%^&*(),.?\":{}|<>]", user_data.password):
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.")
+
+    # Generate OTP
+    otp = ''.join(random.choices(string.digits, k=6))
+    otp_store[user_data.phone] = {
+        "otp": otp,
+        "expires_at": datetime.now() + timedelta(minutes=5),
+        "pending_user": {
+            "fullname": user_data.fullname,
+            "email": user_data.email,
+            "phone": user_data.phone,
+            "hashed_password": pwd_context.hash(user_data.password),
+        }
+    }
+
+    # Simulate sending OTP (for now, just print)
+    print(f"🔐 OTP for {user_data.phone}: {otp}")
+
+    return {"status": "otp_sent", "message": "OTP sent successfully"}
+
+# ===== Verify OTP (Step 2: Create account) =====
+@app.post("/api/verify-otp")
+async def verify_otp(request: Request, db: Session = Depends(get_db)):
+    body = await request.json()
+    otp = body.get("otp")
+
+    for phone, record in otp_store.items():
+        if record["otp"] == otp and datetime.now() < record["expires_at"]:
+            user_data = record["pending_user"]
+            new_user = User(
+                fullname=user_data["fullname"],
+                email=user_data["email"],
+                phone=user_data["phone"],
+                hashed_password=user_data["hashed_password"],
+                is_first_login=True
+            )
+            db.add(new_user)
+            db.commit()
+            del otp_store[phone]
+            return {"status": "success", "message": "Account created successfully"}
+
+    raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+@app.post("/api/resend-otp")
+async def resend_otp(request: Request):
+    body = await request.json()
+    phone = body.get("phone")
+
+    if phone not in otp_store:
+        raise HTTPException(status_code=404, detail="No pending registration for this phone")
+
+    new_otp = ''.join(random.choices(string.digits, k=6))
+    otp_store[phone]["otp"] = new_otp
+    otp_store[phone]["expires_at"] = datetime.now() + timedelta(minutes=5)
+
+    print(f"🔁 Resent OTP for {phone}: {new_otp}")
+    return {"status": "resent", "message": "OTP resent successfully"}  
+    
+# ===== Login (phone-based) =====
 @app.post("/api/login")
-@app.post("/api/login")
-def login(response: Response, payload: AuthData, db: Session = Depends(get_db)):
-    user = login_user(db, payload.email, payload.password)
+def login(response: Response, payload: dict, db: Session = Depends(get_db)):
+    phone = payload.get("phone")
+    password = payload.get("password")
+
+    user = db.query(User).filter(User.phone == phone).first()
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(status_code=401, detail="Phone not registered")
+
+    if not pwd_context.verify(password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid password")
 
     response = JSONResponse({
         "message": "Login successful",
@@ -174,41 +251,13 @@ def login(response: Response, payload: AuthData, db: Session = Depends(get_db)):
         "user_id": str(user.id),
         "email": user.email
     })
-    
-    # Set cookies with explicit paths
-    for name, value in [
-        ("session_token", f"session_{user.id}"),
-        ("user_email", user.email)
-    ]:
-        response.set_cookie(
-            key=name,
-            value=value,
-            max_age=31536000,
-            httponly=True,
-            secure=True,
-            samesite='Lax',  # Capital 'Lax' works more reliably
-            path='/'  # Explicitly set to root path
-        )
-    
+
+    # Set cookies
+    response.set_cookie("session_token", f"session_{user.id}", max_age=31536000, httponly=True, secure=True, samesite="Lax", path="/")
+    response.set_cookie("user_email", user.email, max_age=31536000, path="/")
+
     return response
     
-@app.post("/api/register")
-def register(user_data: UserRegistration, db: Session = Depends(get_db)):
-    hashed_password = hash_password(user_data.password)
-    user = User(
-        fullname=user_data.fullname,
-        phone=user_data.phone,
-        email=user_data.email,
-        hashed_password=hashed_password,
-        is_first_login=True
-    )
-    db.add(user)
-    db.commit()
-    return {
-        "message": "User registered successfully",
-        "redirect_to": f"/onboarding?user_id={user.id}",
-        "user_id": str(user.id)
-    }
 
 @app.post("/complete-onboarding")
 async def complete_onboarding(
@@ -446,4 +495,5 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
