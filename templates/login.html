@@ -108,103 +108,170 @@
     </div>
   </div>
 
-  <script>
-    const loginForm = document.getElementById("login-form");
-    const registerForm = document.getElementById("register-form");
-    const otpSection = document.getElementById("otp-section");
+  
+   <script>
+  const loginForm = document.getElementById("login-form");
+  const registerForm = document.getElementById("register-form");
+  const otpSection = document.getElementById("otp-section");
 
-    const showRegister = document.getElementById("show-register");
-    const showLogin = document.getElementById("show-login");
+  const showRegister = document.getElementById("show-register");
+  const showLogin = document.getElementById("show-login");
 
-    showRegister.onclick = () => {
-      loginForm.style.display = "none";
-      registerForm.style.display = "flex";
-      otpSection.style.display = "none";
-      document.getElementById("form-title").textContent = "Register";
+  // Toggle forms
+  showRegister.onclick = () => {
+    loginForm.style.display = "none";
+    registerForm.style.display = "flex";
+    otpSection.style.display = "none";
+    document.getElementById("form-title").textContent = "Register";
+  };
+
+  showLogin.onclick = () => {
+    registerForm.style.display = "none";
+    loginForm.style.display = "flex";
+    otpSection.style.display = "none";
+    document.getElementById("form-title").textContent = "Login";
+  };
+
+  // ===== Password Strength Feedback =====
+  const passwordInput = document.getElementById("register-password");
+  const feedbackContainer = document.createElement("div");
+  feedbackContainer.style.fontSize = "12px";
+  feedbackContainer.style.textAlign = "left";
+  feedbackContainer.style.marginTop = "5px";
+  passwordInput.parentNode.insertBefore(feedbackContainer, passwordInput.nextSibling);
+
+  const criteria = {
+    length: "At least 8 characters",
+    lowercase: "At least one lowercase letter",
+    uppercase: "At least one uppercase letter",
+    number: "At least one number",
+    symbol: "At least one symbol (@$!%*?&)",
+  };
+
+  function checkPasswordCriteria(password) {
+    return {
+      length: password.length >= 8,
+      lowercase: /[a-z]/.test(password),
+      uppercase: /[A-Z]/.test(password),
+      number: /\d/.test(password),
+      symbol: /[@$!%*?&]/.test(password),
     };
+  }
 
-    showLogin.onclick = () => {
+  function updateFeedback(password) {
+    const results = checkPasswordCriteria(password);
+    let html = "<ul style='padding-left: 20px;'>";
+    for (const key in criteria) {
+      html += `<li style="color: ${results[key] ? "green" : "red"}">${criteria[key]}</li>`;
+    }
+    html += "</ul>";
+    feedbackContainer.innerHTML = html;
+  }
+
+  passwordInput.addEventListener("input", (e) => {
+    updateFeedback(e.target.value);
+  });
+
+  function isValidPassword(password) {
+    const pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return pattern.test(password);
+  }
+
+  // ===== OTP Live Feedback =====
+  const otpInput = document.getElementById("otp-input");
+  otpInput.addEventListener("input", () => {
+    if (otpInput.value.length === 6 && /^\d{6}$/.test(otpInput.value)) {
+      otpInput.style.borderColor = "green";
+    } else {
+      otpInput.style.borderColor = "red";
+    }
+  });
+
+  // ===== Registration Submission =====
+  registerForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const fullname = document.getElementById("register-fullname").value.trim();
+    const email = document.getElementById("register-email").value.trim();
+    const phone = document.getElementById("register-phone").value.trim();
+    const password = document.getElementById("register-password").value.trim();
+    const confirm = document.getElementById("register-confirm").value.trim();
+
+    if (password !== confirm) {
+      alert("Passwords do not match!");
+      return;
+    }
+
+    if (!isValidPassword(password)) {
+      alert("Password must be at least 8 characters, include uppercase, lowercase, a number, and a symbol.");
+      return;
+    }
+
+    const res = await fetch("/api/send-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fullname, email, phone, password }),
+    });
+
+    const data = await res.json();
+    if (data.status === "success") {
       registerForm.style.display = "none";
-      loginForm.style.display = "flex";
+      otpSection.style.display = "block";
+    } else {
+      alert(data.message || "Error sending OTP.");
+    }
+  });
+
+  // ===== OTP Verification =====
+  document.getElementById("verify-otp-btn").addEventListener("click", async () => {
+    const otp = otpInput.value.trim();
+    const email = document.getElementById("register-email").value.trim();
+    const phone = document.getElementById("register-phone").value.trim();
+    const password = document.getElementById("register-password").value.trim();
+    const fullname = document.getElementById("register-fullname").value.trim();
+
+    if (otp.length !== 6 || !/^\d{6}$/.test(otp)) {
+      alert("OTP must be 6 digits.");
+      return;
+    }
+
+    const res = await fetch("/api/verify-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ otp, email, phone, password, fullname }),
+    });
+
+    const data = await res.json();
+    if (data.status === "success") {
+      alert("Account created successfully!");
       otpSection.style.display = "none";
+      loginForm.style.display = "flex";
       document.getElementById("form-title").textContent = "Login";
-    };
+    } else {
+      alert(data.message || "Invalid OTP");
+    }
+  });
 
-    // Handle registration submission
-    registerForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
+  // ===== Login =====
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const phone = document.getElementById("login-phone").value.trim();
+    const password = document.getElementById("login-password").value.trim();
 
-      const email = document.getElementById("register-email").value.trim();
-      const phone = document.getElementById("register-phone").value.trim();
-      const password = document.getElementById("register-password").value.trim();
-      const confirm = document.getElementById("register-confirm").value.trim();
-
-      if (password !== confirm) {
-        alert("Passwords do not match!");
-        return;
-      }
-
-      // send OTP request to backend
-      const res = await fetch("/api/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, phone, password }),
-      });
-
-      const data = await res.json();
-      if (data.status === "success") {
-        registerForm.style.display = "none";
-        otpSection.style.display = "block";
-      } else {
-        alert(data.message || "Error sending OTP.");
-      }
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone, password }),
     });
 
-    // Handle OTP verification
-    document.getElementById("verify-otp-btn").addEventListener("click", async () => {
-      const otp = document.getElementById("otp-input").value.trim();
-      const email = document.getElementById("register-email").value.trim();
-      const phone = document.getElementById("register-phone").value.trim();
-      const password = document.getElementById("register-password").value.trim();
-      const fullname = document.getElementById("register-fullname").value.trim();
-
-      const res = await fetch("/api/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ otp, email, phone, password, fullname }),
-      });
-
-      const data = await res.json();
-      if (data.status === "success") {
-        alert("Account created successfully!");
-        otpSection.style.display = "none";
-        loginForm.style.display = "flex";
-        document.getElementById("form-title").textContent = "Login";
-      } else {
-        alert(data.message || "Invalid OTP");
-      }
-    });
-
-    // Handle login
-    loginForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const phone = document.getElementById("login-phone").value.trim();
-      const password = document.getElementById("login-password").value.trim();
-
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, password }),
-      });
-
-      const data = await res.json();
-      if (data.status === "success") {
-        alert("Login successful!");
-        window.location.href = "/dashboard.html";
-      } else {
-        alert(data.message || "Invalid credentials.");
-      }
-    });
-  </script>
+    const data = await res.json();
+    if (data.status === "success") {
+      alert("Login successful!");
+      window.location.href = "/dashboard.html";
+    } else {
+      alert(data.message || "Invalid credentials.");
+    }
+  });
+</script>
 </body>
 </html>
