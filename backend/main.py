@@ -222,12 +222,16 @@ async def send_otp(
         raise HTTPException(status_code=400, detail="Phone already registered")
 
     # Validate password strength
-    password_pattern = re.compile(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$')
-     if not password_pattern.match(user_data.password):
-      raise HTTPException(
-         status_code=400,
-         detail="Password must be at least 8 characters long, include uppercase, lowercase, a number, and a symbol."
-       )
+    # Validate password strength
+    password_pattern = re.compile(
+        r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+    )
+
+    if not password_pattern.match(user_data.password):
+        raise HTTPException(
+            status_code=400,
+            detail="Password must have at least 8 characters, including uppercase, lowercase, number, and special symbol"
+        )
 
     otp = ''.join(random.choices(string.digits, k=6))
     otp_store[user_data.email] = {
@@ -557,6 +561,7 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
