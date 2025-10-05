@@ -250,7 +250,38 @@ async def send_otp(
 
     print(f"📨 OTP for {user_data.email}: {otp}")
     return {"status": "success", "message": "OTP sent successfully"}
-    
+
+@app.post("/api/check-password")
+async def check_password(request: Request):
+    """Live password strength checker"""
+    body = await request.json()
+    password = body.get("password")
+
+    # Define password strength pattern
+    password_pattern = re.compile(
+        r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+    )
+
+    # Check each rule
+    has_length = len(password) >= 8
+    has_upper = any(c.isupper() for c in password)
+    has_lower = any(c.islower() for c in password)
+    has_digit = any(c.isdigit() for c in password)
+    has_symbol = any(c in "@$!%*?&" for c in password)
+
+    is_strong = password_pattern.match(password) is not None
+
+    return {
+        "valid": is_strong,
+        "rules": {
+            "length": has_length,
+            "uppercase": has_upper,
+            "lowercase": has_lower,
+            "number": has_digit,
+            "symbol": has_symbol
+        }
+    }
+
 @app.post("/api/verify-otp")
 async def verify_otp(request: Request, db: Session = Depends(get_db)):
     body = await request.json()
@@ -561,6 +592,7 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
