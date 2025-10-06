@@ -253,26 +253,52 @@ registerForm.addEventListener("submit", async (e) => {
     return;
   }
 
-  if (!isValidPassword(password)) {
+  // Password validation (same as before)
+  const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#._-])[A-Za-z\d@$!%*?&#._-]{8,}$/;
+  if (!regex.test(password)) {
     alert("Password must be at least 8 characters, include uppercase, lowercase, a number, and a symbol.");
     return;
   }
 
-  const res = await fetch("/api/send-otp", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ fullname, email, phone, password }),
-  });
+  try {
+    const res = await fetch("/api/send-otp", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({ fullname, email, phone, password }),
+    });
 
-  const data = await res.json();
-  if (data.status === "success") {
-    registerForm.style.display = "none";
-    otpSection.style.display = "block";
-  } else {
-    alert(data.message || "Error sending OTP.");
+    const text = await res.text();
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error("Response not JSON:", text);
+      alert("Server returned invalid response.");
+      return;
+    }
+
+    if (!res.ok) {
+      alert(data.detail || data.message || "Failed to send OTP");
+      return;
+    }
+
+    if (data.status === "success") {
+      alert("✅ OTP sent successfully! Check your email inbox.");
+      registerForm.style.display = "none";
+      otpSection.style.display = "block";
+    } else {
+      alert(data.message || "Error sending OTP.");
+    }
+  } catch (error) {
+    console.error("Fetch error:", error);
+    alert("❌ Network or server error. Please try again.");
   }
 });
-
+  
 // ===== OTP Verification =====
 document.getElementById("verify-otp-btn").addEventListener("click", async () => {
   const otp = otpInput.value.trim();
