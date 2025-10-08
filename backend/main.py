@@ -24,19 +24,7 @@ import random, string, re
 from passlib.context import CryptContext
 from pydantic import EmailStr
 from fastapi import BackgroundTasks
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 
-# ===== EMAIL CONFIG ===== #
-
-
-load_dotenv()
-
-EMAIL_SENDER = os.getenv("EMAIL_SENDER")
-EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
-SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 # Init FastAPI app
 app = FastAPI()
 
@@ -601,6 +589,7 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
