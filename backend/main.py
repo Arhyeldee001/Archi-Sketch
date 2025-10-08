@@ -24,6 +24,9 @@ import random, string, re
 from passlib.context import CryptContext
 from pydantic import EmailStr
 from fastapi import BackgroundTasks
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 # Init FastAPI app
 app = FastAPI()
@@ -115,41 +118,49 @@ SUBSCRIPTIONS_FILE = "subscriptions.txt"
 
 
 def send_email_otp(recipient_email: str, otp_code: str):
-    """Send OTP email using Resend API"""
+    """Send OTP via SMTP (Gmail App Password recommended)."""
     try:
-        RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+        EMAIL_SENDER = os.getenv("EMAIL_SENDER")
+        EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
+        SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+        SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 
-        url = "https://api.resend.com/emails"
-        headers = {
-            "Authorization": f"Bearer {RESEND_API_KEY}",
-            "Content-Type": "application/json"
-        }
+        if not EMAIL_SENDER or not EMAIL_PASSWORD:
+            print("❌ SMTP credentials not configured (EMAIL_SENDER/EMAIL_PASSWORD).")
+            return
 
-        data = {
-            "from": "ArchiSketch <onboarding@resend.dev>",
-            "to": [recipient_email],
-            "subject": "Your ArchiSketch OTP Code",
-            "html": f"""
-                <div style="font-family: Arial, sans-serif; padding: 20px;">
-                    <h2>Your OTP Code</h2>
-                    <p style="font-size: 18px;">Hey 👋, here’s your one-time password:</p>
-                    <p style="font-size: 24px; font-weight: bold; letter-spacing: 2px;">{otp_code}</p>
-                    <p>This code expires in <b>5 minutes</b>.</p>
-                    <p style="font-size: 12px; color: gray;">Sent via ArchiSketch</p>
-                </div>
-            """,
-        }
+        msg = MIMEMultipart("alternative")
+        msg["From"] = EMAIL_SENDER
+        msg["To"] = recipient_email
+        msg["Subject"] = "Your Archi Trace OTP Code"
 
-        response = requests.post(url, headers=headers, json=data)
-        if response.status_code in [200, 202]:
-            print(f"📧 OTP email sent successfully to {recipient_email}")
-        else:
-            print(f"❌ Resend Error {response.status_code}: {response.text}")
+        html = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif;">
+                <h2 style="color:#764ba2;">Archi Trace Verification</h2>
+                <p>Use this One-Time Password (OTP) to complete your registration:</p>
+                <h1 style="color:#764ba2;">{otp_code}</h1>
+                <p>This code will expire in 5 minutes.</p>
+            </body>
+        </html>
+        """
 
+        # Attach HTML part
+        msg.attach(MIMEText(html, "html"))
+
+        # Connect and send
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=15) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+            server.sendmail(EMAIL_SENDER, recipient_email, msg.as_string())
+
+        print(f"📧 OTP email sent to {recipient_email}")
     except Exception as e:
-        print(f"❌ Failed to send OTP email via Resend: {e}")
-
-
+        # Log full exception to server logs for debugging (no user exposure here)
+        print(f"❌ Failed to send email OTP: {e}")
+        
 # ===== Middleware ===== #
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
@@ -589,6 +600,7 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
