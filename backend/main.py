@@ -127,45 +127,39 @@ SUBSCRIPTIONS_FILE = "subscriptions.txt"
 
 
 def send_email_otp(recipient_email: str, otp_code: str):
-    """Send OTP using MailerSend API"""
+    """Send OTP email using Resend API"""
     try:
-        MAILERSEND_API_KEY = os.getenv("MAILERSEND_API_KEY")
+        RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 
-        url = "https://api.mailersend.com/v1/email"
+        url = "https://api.resend.com/emails"
         headers = {
-            "Authorization": f"Bearer {MAILERSEND_API_KEY}",
+            "Authorization": f"Bearer {RESEND_API_KEY}",
             "Content-Type": "application/json"
         }
 
         data = {
-            "from": {
-                "email": "no-reply@archisketch.com",  # or your verified sender email
-                "name": "Archi Trace"
-            },
-            "to": [
-                {"email": recipient_email}
-            ],
-            "subject": "Your Archi Trace OTP Code",
+            "from": "ArchiSketch <onboarding@resend.dev>",
+            "to": [recipient_email],
+            "subject": "Your ArchiSketch OTP Code",
             "html": f"""
-                <html>
-                    <body style="font-family: Arial, sans-serif;">
-                        <h2 style="color:#764ba2;">Archi Trace Verification</h2>
-                        <p>Use this One-Time Password (OTP) to complete your registration:</p>
-                        <h1 style="color:#764ba2;">{otp_code}</h1>
-                        <p>This code will expire in 5 minutes.</p>
-                    </body>
-                </html>
-            """
+                <div style="font-family: Arial, sans-serif; padding: 20px;">
+                    <h2>Your OTP Code</h2>
+                    <p style="font-size: 18px;">Hey 👋, here’s your one-time password:</p>
+                    <p style="font-size: 24px; font-weight: bold; letter-spacing: 2px;">{otp_code}</p>
+                    <p>This code expires in <b>5 minutes</b>.</p>
+                    <p style="font-size: 12px; color: gray;">Sent via ArchiSketch</p>
+                </div>
+            """,
         }
 
         response = requests.post(url, headers=headers, json=data)
         if response.status_code in [200, 202]:
-            print(f"📧 OTP email sent to {recipient_email}")
+            print(f"📧 OTP email sent successfully to {recipient_email}")
         else:
-            print(f"❌ MailerSend Error {response.status_code}: {response.text}")
+            print(f"❌ Resend Error {response.status_code}: {response.text}")
 
     except Exception as e:
-        print(f"❌ Failed to send OTP email via MailerSend: {e}")
+        print(f"❌ Failed to send OTP email via Resend: {e}")
 
 
 # ===== Middleware ===== #
@@ -607,6 +601,7 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
