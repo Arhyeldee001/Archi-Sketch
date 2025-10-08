@@ -125,33 +125,48 @@ class SubscriptionData(BaseModel):
 # Subscription storage file path
 SUBSCRIPTIONS_FILE = "subscriptions.txt"
 
+
 def send_email_otp(recipient_email: str, otp_code: str):
-    """Send OTP via email using SMTP"""
+    """Send OTP using MailerSend API"""
     try:
-        msg = MIMEMultipart()
-        msg["From"] = EMAIL_SENDER
-        msg["To"] = recipient_email
-        msg["Subject"] = "Your Archi Trace OTP Code"
+        MAILERSEND_API_KEY = os.getenv("MAILERSEND_API_KEY")
 
-        body = f"""
-        <html>
-            <body>
-                <h2 style="color:#764ba2;">Archi Trace Verification</h2>
-                <p>Use this One-Time Password (OTP) to complete your registration:</p>
-                <h1 style="color:#764ba2;">{otp_code}</h1>
-                <p>This code will expire in 5 minutes.</p>
-            </body>
-        </html>
-        """
-        msg.attach(MIMEText(body, "html"))
+        url = "https://api.mailersend.com/v1/email"
+        headers = {
+            "Authorization": f"Bearer {MAILERSEND_API_KEY}",
+            "Content-Type": "application/json"
+        }
 
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls()
-            server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-            server.send_message(msg)
-        print(f"📧 OTP email sent to {recipient_email}")
+        data = {
+            "from": {
+                "email": "no-reply@archisketch.com",  # or your verified sender email
+                "name": "Archi Trace"
+            },
+            "to": [
+                {"email": recipient_email}
+            ],
+            "subject": "Your Archi Trace OTP Code",
+            "html": f"""
+                <html>
+                    <body style="font-family: Arial, sans-serif;">
+                        <h2 style="color:#764ba2;">Archi Trace Verification</h2>
+                        <p>Use this One-Time Password (OTP) to complete your registration:</p>
+                        <h1 style="color:#764ba2;">{otp_code}</h1>
+                        <p>This code will expire in 5 minutes.</p>
+                    </body>
+                </html>
+            """
+        }
+
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code in [200, 202]:
+            print(f"📧 OTP email sent to {recipient_email}")
+        else:
+            print(f"❌ MailerSend Error {response.status_code}: {response.text}")
+
     except Exception as e:
-        print(f"❌ Failed to send email OTP: {e}")
+        print(f"❌ Failed to send OTP email via MailerSend: {e}")
+
 
 # ===== Middleware ===== #
 @app.middleware("http")
@@ -592,6 +607,7 @@ def logout():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
